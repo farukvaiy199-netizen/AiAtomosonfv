@@ -483,8 +483,13 @@
           </div>
           <button class="connect-btn off" id="sheetBtn" onclick="toggleConnect('sheet')">Connect</button>
         </div>
-        <input type="text" id="sheetLink" class="token-input" placeholder="Google Sheet এর শেয়ার লিংক পেস্ট করুন">
-        <div class="hint">শিটটি "Anyone with the link – Editor" করে শেয়ার করুন, যাতে AI প্রশ্নের উত্তর শিট থেকে দিতে পারে।</div>
+        <input type="text" id="sheetLink" class="token-input" placeholder="Google Sheet এর শেয়ার লিংক পেস্ট করুন" style="margin-bottom:8px;">
+        <div class="hint" style="margin-bottom:10px;">এই লিংক থেকে AI প্রোডাক্ট/FAQ-এর তথ্য পড়ে। শিটটি "Anyone with the link – Viewer" করে শেয়ার করা থাকতে হবে।</div>
+
+        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">অর্ডার শিটে লেখার জন্য (Apps Script URL)</div>
+        <input type="text" id="sheetScriptUrl" class="token-input" placeholder="https://script.google.com/macros/s/xxxxx/exec" style="margin-bottom:8px;">
+        <input type="text" id="sheetScriptToken" class="token-input" placeholder="স্ক্রিপ্টের SECRET_TOKEN">
+        <div class="hint">Messenger/WhatsApp-এ AI-এর নেওয়া অর্ডার ও কাস্টমার তথ্য এই Apps Script লিংকের মাধ্যমে সরাসরি Orders/Customers ট্যাবে লেখা হবে।</div>
       </div>
 
       <div class="settings-group">AI ইঞ্জিন</div>
@@ -745,6 +750,7 @@ function renderOrders(){
       <div class="row-main">
         <div class="t1">${o.name}</div>
         <div class="t2">${o.product} · x${o.qty} · ${o.source}</div>
+        ${(o.phone || o.address) ? `<div class="t2" style="margin-top:1px;">${[o.phone, o.address].filter(Boolean).join(' · ')}</div>` : ''}
         <select class="status-select" onchange="updateStatus('${o.id}', this.value)">
           <option ${o.status==='Pending'?'selected':''}>Pending</option>
           <option ${o.status==='Processing'?'selected':''}>Processing</option>
@@ -781,6 +787,13 @@ async function loadCustomers(){
   updateDashboardStats();
 }
 
+function chatLink(c){
+  if(c.platform === 'facebook' && c.platformId) return 'https://www.messenger.com/t/' + c.platformId;
+  if(c.platform === 'whatsapp' && c.platformId) return 'https://wa.me/' + c.platformId.replace(/[^0-9]/g,'');
+  if(c.platform === 'website' && c.phone) return 'https://wa.me/' + c.phone.replace(/[^0-9]/g,'');
+  return null;
+}
+
 function renderCustomers(){
   const wrap = document.getElementById('customersList');
   if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
@@ -790,18 +803,24 @@ function renderCustomers(){
     wrap.innerHTML = `<div class="empty">এখনো কোনো কাস্টমার মেসেজ করেনি</div>`;
     return;
   }
-  wrap.innerHTML = filtered.map(c=>`
+  wrap.innerHTML = filtered.map(c=>{
+    const link = chatLink(c);
+    const linkLabel = c.platform === 'website' ? 'WhatsApp' : (c.platform === 'facebook' ? 'Messenger' : 'WhatsApp');
+    const platformLabel = c.platform === 'facebook' ? 'Messenger' : c.platform === 'whatsapp' ? 'WhatsApp' : c.platform === 'website' ? 'ওয়েবসাইট' : (c.platform || '');
+    return `
     <div class="card row-card">
       <div class="row-avatar">${initials(c.name)}</div>
       <div class="row-main">
         <div class="t1">${c.name}</div>
-        <div class="t2">${c.phone || c.platform} · মোট অর্ডার ${c.orders}</div>
+        <div class="t2">${c.phone || platformLabel} · ${platformLabel} · মোট অর্ডার ${c.orders}</div>
+        ${link ? `<a href="${link}" target="_blank" style="font-size:11px; color:var(--teal); font-weight:600; text-decoration:none;">${linkLabel}-এ চ্যাট খুলুন →</a>` : ''}
       </div>
       <div class="cust-toggle ${c.ai?'live':''}" onclick="toggleAi('${c.id}')">
         <span class="dot"></span> ${c.ai ? 'AI চালু' : 'AI বন্ধ'}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function toggleAi(id){
@@ -961,6 +980,7 @@ async function loadSettingsStatus(){
       }
     });
     if(s.sheetLink) document.getElementById('sheetLink').value = s.sheetLink;
+    if(s.sheetScriptUrl) document.getElementById('sheetScriptUrl').value = s.sheetScriptUrl;
     if(s.aiProvider) document.getElementById('aiProvider').value = s.aiProvider;
     if(s.fbAppId) document.getElementById('fbAppId').value = s.fbAppId;
     document.getElementById('aiAutoReplyToggle').checked = !!s.aiAutoReply;
@@ -1009,7 +1029,11 @@ async function copyWebhook(inputId){
 
 async function saveAutomationSettings(){
   if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
-  const payload = { aiAutoReply: document.getElementById('aiAutoReplyToggle').checked };
+  const payload = {
+    aiAutoReply: document.getElementById('aiAutoReplyToggle').checked,
+    sheetScriptUrl: document.getElementById('sheetScriptUrl').value.trim(),
+    sheetScriptToken: document.getElementById('sheetScriptToken').value.trim()
+  };
   try{
     await apiFetch('/settings', { method:'POST', body: JSON.stringify(payload) });
   }catch(e){ toast(e.message); return; }
