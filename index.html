@@ -496,8 +496,15 @@
           </div>
           <button class="connect-btn off" id="aiBtn" onclick="toggleConnect('ai')">Connect</button>
         </div>
-        <input type="password" id="aiKey" class="token-input" placeholder="Groq / OpenAI API Key পেস্ট করুন">
-        <div class="hint">এই কী দিয়ে AI কাস্টমারের মেসেজের উত্তর দেবে।</div>
+        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">প্রোভাইডার বেছে নিন</div>
+        <select id="aiProvider" class="status-select" style="width:100%; margin-bottom:8px; padding:9px 11px;">
+          <option value="groq">Groq (Llama)</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+          <option value="openrouter">OpenRouter</option>
+          <option value="gemini">Google Gemini</option>
+        </select>
+        <input type="password" id="aiKey" class="token-input" placeholder="উপরে বাছাই করা প্রোভাইডারের API Key পেস্ট করুন">
+        <div class="hint">এই কী দিয়ে AI কাস্টমারের মেসেজের উত্তর দেবে। প্রোভাইডার পাল্টালে সেই প্রোভাইডারের নিজস্ব কী বসাতে হবে — Groq আর OpenAI-এর কী একে অপরের জায়গায় কাজ করে না।</div>
       </div>
 
       <div class="settings-group">🔗 আপনার Webhook লিংক (Bazaar Admin-এ বসান)</div>
@@ -881,7 +888,7 @@ const connMeta = {
   fb:    {inputs:['fbToken'],               settingsKey:'fbToken',    label:'Facebook',     empty:'Access Token'},
   wa:    {inputs:['waToken','waPhoneNumberId'], settingsKey:'waToken', label:'WhatsApp',     empty:'Access Token / Phone Number ID'},
   sheet: {inputs:['sheetLink'],             settingsKey:'sheetLink',  label:'Google Sheet', empty:'শিট লিংক'},
-  ai:    {inputs:['aiKey'],                 settingsKey:'aiKey',      label:'AI API',       empty:'API Key'}
+  ai:    {inputs:['aiKey', 'aiProvider'],   settingsKey:'aiKey',      label:'AI API',       empty:'API Key'}
 };
 
 async function toggleConnect(type){
@@ -954,6 +961,7 @@ async function loadSettingsStatus(){
       }
     });
     if(s.sheetLink) document.getElementById('sheetLink').value = s.sheetLink;
+    if(s.aiProvider) document.getElementById('aiProvider').value = s.aiProvider;
     if(s.fbAppId) document.getElementById('fbAppId').value = s.fbAppId;
     document.getElementById('aiAutoReplyToggle').checked = !!s.aiAutoReply;
     updateSystemStatus();
