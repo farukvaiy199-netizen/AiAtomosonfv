@@ -467,24 +467,37 @@
             <div class="l">WhatsApp Business</div>
             <div class="r" id="waStatusText">সংযুক্ত নয়</div>
           </div>
-          <button class="connect-btn off" id="waBtn" onclick="toggleConnect('wa')">Connect</button>
+          <button class="connect-btn off" id="waBtn" onclick="toggleConnect('wa')">ম্যানুয়াল</button>
         </div>
+
+        <button class="btn btn-fb" id="waAutoBtn" onclick="autoConnectWhatsApp()" style="background:linear-gradient(135deg,#25D366,#128C7E);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.44.79 3.06 1.2 4.72 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Z"/></svg>
+          WhatsApp দিয়ে অটো-কানেক্ট করুন
+        </button>
+        <div class="hint" style="margin:8px 0 12px;">Meta-র Embedded Signup পপআপ খুলবে — আপনার WhatsApp Business নাম্বার সিলেক্ট করলেই টোকেন নিজে থেকে সংগ্রহ হবে।</div>
+
+        <div class="divider">অথবা ম্যানুয়ালি</div>
+        <input type="text" id="waConfigId" class="token-input" placeholder="WhatsApp Configuration ID" style="margin-bottom:8px;">
         <input type="text" id="waToken" class="token-input" placeholder="WhatsApp Business Access Token পেস্ট করুন" style="margin-bottom:8px;">
         <input type="text" id="waPhoneNumberId" class="token-input" placeholder="WhatsApp Phone Number ID পেস্ট করুন">
-        <div class="hint">WhatsApp Cloud API এর অ্যাক্সেস টোকেন ও Phone Number ID — দুটোই Meta Developer Dashboard এ পাবেন।</div>
+        <div class="hint">WhatsApp Cloud API এর অ্যাক্সেস টোকেন ও Phone Number ID — দুটোই Meta Developer Dashboard এ পাবেন। Configuration ID Meta Business Portfolio সেটআপ করার সময় পাবেন।</div>
       </div>
 
       <div class="settings-group">Google Sheet সংযোগ</div>
       <div class="card conn-card">
         <div class="conn-top">
           <div>
-            <div class="l">Google Sheet</div>
+            <div class="l">Google Sheet (Inventory)</div>
             <div class="r" id="sheetStatusText">সংযুক্ত নয়</div>
           </div>
           <button class="connect-btn off" id="sheetBtn" onclick="toggleConnect('sheet')">Connect</button>
         </div>
         <input type="text" id="sheetLink" class="token-input" placeholder="Google Sheet এর শেয়ার লিংক পেস্ট করুন" style="margin-bottom:8px;">
-        <div class="hint" style="margin-bottom:10px;">এই লিংক থেকে AI প্রোডাক্ট/FAQ-এর তথ্য পড়ে। শিটটি "Anyone with the link – Viewer" করে শেয়ার করা থাকতে হবে।</div>
+        <div class="hint" style="margin-bottom:10px;">এই লিংক থেকে AI প্রোডাক্টের নাম/দাম/ছবির তথ্য পড়ে। শিটটি "Anyone with the link – Viewer" করে শেয়ার করা থাকতে হবে।</div>
+
+        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">FAQ শিট লিংক (ঐচ্ছিক, আলাদা ট্যাব হলে)</div>
+        <input type="text" id="faqSheetLink" class="token-input" placeholder="FAQ ট্যাবের শেয়ার লিংক (gid সহ) পেস্ট করুন" style="margin-bottom:8px;">
+        <div class="hint" style="margin-bottom:10px;">সাধারণ প্রশ্ন-উত্তর (ডেলিভারি, পেমেন্ট ইত্যাদি) আলাদা ট্যাবে থাকলে সেই ট্যাবের লিংক এখানে বসান — AI দুটো শিটই একসাথে পড়বে।</div>
 
         <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">সেটিংস ও অর্ডার স্টোরেজ (Apps Script)</div>
         <div class="r" id="sheetStorageStatus" style="font-size:12px; margin-bottom:8px;">যাচাই হচ্ছে...</div>
@@ -928,7 +941,7 @@ async function toggleConnect(type){
       await apiFetch('/settings', { method:'POST', body: JSON.stringify(payload) });
     }catch(e){ toast(e.message); return; }
     btn.classList.remove('on'); btn.classList.add('off');
-    btn.textContent = 'Connect';
+    btn.textContent = (type==='fb' || type==='wa') ? 'ম্যানুয়াল' : 'Connect';
     txt.textContent = 'সংযুক্ত নয়';
     txt.style.color = 'var(--ink-dim)';
     toast(meta.label + ' সংযোগ বিচ্ছিন্ন হয়েছে');
@@ -973,12 +986,13 @@ async function loadSettingsStatus(){
         txt.style.color = 'var(--teal)';
       } else {
         btn.classList.remove('on'); btn.classList.add('off');
-        btn.textContent = type==='fb' ? 'ম্যানুয়াল' : 'Connect';
+        btn.textContent = (type==='fb' || type==='wa') ? 'ম্যানুয়াল' : 'Connect';
         txt.textContent = 'সংযুক্ত নয়';
         txt.style.color = 'var(--ink-dim)';
       }
     });
     if(s.sheetLink) document.getElementById('sheetLink').value = s.sheetLink;
+    if(s.faqSheetLink) document.getElementById('faqSheetLink').value = s.faqSheetLink;
     const storageEl = document.getElementById('sheetStorageStatus');
     if(storageEl){
       storageEl.textContent = s.sheetStorageConfigured ? '● স্থায়ীভাবে সংযুক্ত আছে' : '● এখনো Render-এ Environment ভ্যারিয়েবল বসানো হয়নি';
@@ -986,6 +1000,7 @@ async function loadSettingsStatus(){
     }
     if(s.aiProvider) document.getElementById('aiProvider').value = s.aiProvider;
     if(s.fbAppId) document.getElementById('fbAppId').value = s.fbAppId;
+    if(s.waConfigId) document.getElementById('waConfigId').value = s.waConfigId;
     document.getElementById('aiAutoReplyToggle').checked = !!s.aiAutoReply;
     updateSystemStatus();
   }catch(e){ /* সার্ভার সাড়া না দিলে চুপচাপ রাখি */ }
@@ -1033,7 +1048,9 @@ async function copyWebhook(inputId){
 async function saveAutomationSettings(){
   if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
   const payload = {
-    aiAutoReply: document.getElementById('aiAutoReplyToggle').checked
+    aiAutoReply: document.getElementById('aiAutoReplyToggle').checked,
+    faqSheetLink: document.getElementById('faqSheetLink').value.trim(),
+    waConfigId: document.getElementById('waConfigId').value.trim()
   };
   try{
     await apiFetch('/settings', { method:'POST', body: JSON.stringify(payload) });
@@ -1104,6 +1121,65 @@ function fetchPagesAndConnect(userToken){
     toast('Facebook পেজ "' + page.name + '" সফলভাবে সংযুক্ত হয়েছে ✓');
     updateSystemStatus();
   });
+}
+
+/* ================= WhatsApp Embedded Signup অটো-কানেক্ট (নতুন ফিচার) ================= */
+// এটা কাজ করানোর আগে Meta Business Portfolio বানানো ও Meta Developer কনসোলে
+// WhatsApp Configuration ID তৈরি করা থাকতে হবে (Settings-এ "WhatsApp Configuration ID" ঘরে বসান)।
+let waSignupData = { phoneNumberId: '', wabaId: '' };
+
+// Meta Embedded Signup পপআপ থেকে postMessage দিয়ে phone_number_id/waba_id পাঠায় — সেটা ধরার জন্য
+window.addEventListener('message', function(event){
+  if (!event.origin.endsWith('facebook.com')) return;
+  try{
+    const data = JSON.parse(event.data);
+    if (data.type === 'WA_EMBEDDED_SIGNUP' && data.event === 'FINISH') {
+      waSignupData.phoneNumberId = data.data?.phone_number_id || '';
+      waSignupData.wabaId = data.data?.waba_id || '';
+    }
+  }catch(e){ /* WhatsApp-সংক্রান্ত না এমন মেসেজ হলে চুপচাপ উপেক্ষা করি */ }
+});
+
+function autoConnectWhatsApp(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  const configId = document.getElementById('waConfigId').value.trim();
+  if(!configId){ toast('আগে WhatsApp Configuration ID লিখুন'); return; }
+  if(!ensureFbInit()) return; // Facebook-এর জন্য বানানো FB.init() এখানেও কাজে লাগে, একই App ID ব্যবহার হয়
+
+  FB.login(function(response){
+    if(response.authResponse && response.authResponse.code){
+      finishWhatsAppConnect(response.authResponse.code);
+    } else {
+      toast('WhatsApp সংযোগ বাতিল করা হয়েছে');
+    }
+  }, {
+    config_id: configId,
+    response_type: 'code',
+    override_default_response_type: true,
+    extras: { feature: 'whatsapp_embedded_signup', sessionInfoVersion: 3 }
+  });
+}
+
+async function finishWhatsAppConnect(code){
+  try{
+    await apiFetch('/settings/wa-auto', { method:'POST', body: JSON.stringify({
+      code,
+      phoneNumberId: waSignupData.phoneNumberId,
+      wabaId: waSignupData.wabaId,
+      fbAppId: document.getElementById('fbAppId').value.trim()
+    })});
+  }catch(e){ toast(e.message); return; }
+
+  document.getElementById('waToken').value = '(অটোমেটিক সংযুক্ত)';
+  if (waSignupData.phoneNumberId) document.getElementById('waPhoneNumberId').value = waSignupData.phoneNumberId;
+  const btn = document.getElementById('waBtn');
+  const txt = document.getElementById('waStatusText');
+  btn.classList.remove('off'); btn.classList.add('on');
+  btn.innerHTML = '● সংযুক্ত';
+  txt.textContent = 'সংযুক্ত আছে';
+  txt.style.color = 'var(--teal)';
+  toast('WhatsApp সফলভাবে সংযুক্ত হয়েছে ✓');
+  updateSystemStatus();
 }
 
 /* ---------------- Filter chips ---------------- */
