@@ -477,6 +477,7 @@
         <div class="hint" style="margin:8px 0 12px;">Meta-র Embedded Signup পপআপ খুলবে — আপনার WhatsApp Business নাম্বার সিলেক্ট করলেই টোকেন নিজে থেকে সংগ্রহ হবে।</div>
 
         <div class="divider">অথবা ম্যানুয়ালি</div>
+        <input type="text" id="waAppId" class="token-input" placeholder="WhatsApp Meta App ID (Facebook থেকে আলাদা হলে)" style="margin-bottom:8px;">
         <input type="text" id="waConfigId" class="token-input" placeholder="WhatsApp Configuration ID" style="margin-bottom:8px;">
         <input type="text" id="waToken" class="token-input" placeholder="WhatsApp Business Access Token পেস্ট করুন" style="margin-bottom:8px;">
         <input type="text" id="waPhoneNumberId" class="token-input" placeholder="WhatsApp Phone Number ID পেস্ট করুন">
@@ -1001,6 +1002,7 @@ async function loadSettingsStatus(){
     if(s.aiProvider) document.getElementById('aiProvider').value = s.aiProvider;
     if(s.fbAppId) document.getElementById('fbAppId').value = s.fbAppId;
     if(s.waConfigId) document.getElementById('waConfigId').value = s.waConfigId;
+    if(s.waAppId) document.getElementById('waAppId').value = s.waAppId;
     document.getElementById('aiAutoReplyToggle').checked = !!s.aiAutoReply;
     updateSystemStatus();
   }catch(e){ /* সার্ভার সাড়া না দিলে চুপচাপ রাখি */ }
@@ -1050,7 +1052,8 @@ async function saveAutomationSettings(){
   const payload = {
     aiAutoReply: document.getElementById('aiAutoReplyToggle').checked,
     faqSheetLink: document.getElementById('faqSheetLink').value.trim(),
-    waConfigId: document.getElementById('waConfigId').value.trim()
+    waConfigId: document.getElementById('waConfigId').value.trim(),
+    waAppId: document.getElementById('waAppId').value.trim()
   };
   try{
     await apiFetch('/settings', { method:'POST', body: JSON.stringify(payload) });
@@ -1144,11 +1147,15 @@ function autoConnectWhatsApp(){
   if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
   const configId = document.getElementById('waConfigId').value.trim();
   if(!configId){ toast('আগে WhatsApp Configuration ID লিখুন'); return; }
-  if(!ensureFbInit()) return; // Facebook-এর জন্য বানানো FB.init() এখানেও কাজে লাগে, একই App ID ব্যবহার হয়
+  // WhatsApp-এর জন্য আলাদা Meta App হলে সেই App ID ব্যবহার হবে, না দিলে Facebook App ID-ই ব্যবহার হবে
+  const waAppId = document.getElementById('waAppId').value.trim() || document.getElementById('fbAppId').value.trim();
+  if(!waAppId){ toast('আগে WhatsApp App ID অথবা Facebook App ID লিখুন'); return; }
+  if(typeof FB === 'undefined'){ toast('Facebook SDK এখনো লোড হয়নি, একটু পর আবার চেষ্টা করুন'); return; }
+  FB.init({ appId: waAppId, cookie: true, xfbml: false, version: 'v19.0' });
 
   FB.login(function(response){
     if(response.authResponse && response.authResponse.code){
-      finishWhatsAppConnect(response.authResponse.code);
+      finishWhatsAppConnect(response.authResponse.code, waAppId);
     } else {
       toast('WhatsApp সংযোগ বাতিল করা হয়েছে');
     }
@@ -1160,13 +1167,13 @@ function autoConnectWhatsApp(){
   });
 }
 
-async function finishWhatsAppConnect(code){
+async function finishWhatsAppConnect(code, waAppId){
   try{
     await apiFetch('/settings/wa-auto', { method:'POST', body: JSON.stringify({
       code,
       phoneNumberId: waSignupData.phoneNumberId,
       wabaId: waSignupData.wabaId,
-      fbAppId: document.getElementById('fbAppId').value.trim()
+      fbAppId: waAppId
     })});
   }catch(e){ toast(e.message); return; }
 
