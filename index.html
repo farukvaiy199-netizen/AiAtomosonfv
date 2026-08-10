@@ -88,6 +88,14 @@
     content:''; position:absolute; top:8px; right:9px; width:6px; height:6px;
     border-radius:50%; background:var(--coral); box-shadow:0 0 0 2px var(--bg-1);
   }
+  .topbar-actions{display:flex; align-items:center; gap:8px;}
+  .auth-btn{
+    width:38px; height:38px; border-radius:12px;
+    background:var(--glass); border:1px solid var(--glass-brd);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-dim);
+  }
+  .auth-btn.locked{color:var(--gold); border-color:rgba(232,183,75,0.35);}
+  .auth-btn.unlocked{color:var(--teal); border-color:rgba(24,184,155,0.35);}
 
   main{flex:1; padding:6px 18px 100px;}
   section{display:none; animation:fade .35s ease;}
@@ -286,6 +294,38 @@
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
 
   .empty{text-align:center; padding:34px 10px; color:var(--ink-faint); font-size:12.5px;}
+
+  /* ---- Login overlay (নতুন) ---- */
+  .login-overlay{
+    position:fixed; inset:0; z-index:200;
+    background:rgba(6,9,15,0.72);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .login-overlay.hidden{display:none;}
+  .login-card{
+    width:100%; max-width:360px; padding:26px 22px;
+    background:#0e1420; border:1px solid var(--glass-brd-hi); border-radius:20px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .login-card .lock-icon{
+    width:46px; height:46px; border-radius:14px; margin-bottom:14px;
+    background:var(--teal-soft); display:flex; align-items:center; justify-content:center;
+  }
+  .login-card h2{font-size:17px; margin:0 0 4px;}
+  .login-card p{font-size:12px; color:var(--ink-dim); margin:0 0 18px;}
+  .login-card input{
+    width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-brd); border-radius:12px;
+    color:var(--ink); font-family:inherit; font-size:13.5px; padding:12px 14px; outline:none; margin-bottom:10px;
+  }
+  .login-card input::placeholder{color:var(--ink-faint);}
+  .login-err{font-size:11.5px; color:var(--coral); margin:-2px 0 8px; min-height:14px;}
+  .locked-note{
+    display:flex; align-items:center; gap:8px; padding:11px 13px; margin-bottom:12px;
+    background:var(--gold-soft); border:1px solid rgba(232,183,75,0.3); border-radius:12px;
+    font-size:11.5px; color:var(--gold); font-weight:600;
+  }
 </style>
 </head>
 <body>
@@ -299,8 +339,13 @@
         <div class="sub"><span class="pulse-dot"></span> AI সক্রিয় আছে</div>
       </div>
     </div>
-    <div class="bell" onclick="toast('৩টি নতুন নোটিফিকেশন')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c7cede" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <div class="topbar-actions">
+      <div class="auth-btn locked" id="authBtn" onclick="handleAuthBtnClick()" title="লগইন">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="bell" onclick="toast('৩টি নতুন নোটিফিকেশন')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c7cede" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
     </div>
   </div>
 
@@ -310,6 +355,8 @@
     <section id="dashboard" class="active">
       <h1 class="page-title">শুভ সকাল, ফারুক 👋</h1>
       <p class="page-sub">আজকের ব্যবসার সারসংক্ষেপ দেখুন</p>
+
+      <div id="lockedNoteDashboard"></div>
 
       <div class="revenue-card">
         <div class="top">
@@ -426,6 +473,14 @@
     <section id="settings">
       <h1 class="page-title">সেটিংস</h1>
       <p class="page-sub">অ্যাকাউন্ট ও ব্যবসার তথ্য পরিচালনা করুন</p>
+
+      <div id="lockedNoteSettings"></div>
+
+      <div class="settings-group">অ্যাকাউন্ট</div>
+      <div class="card set-row" id="accountRow">
+        <div class="l" id="accountLabel">লগইন করা নেই</div>
+        <button class="connect-btn off" id="accountBtn" onclick="handleAuthBtnClick()">লগইন করুন</button>
+      </div>
 
       <div class="settings-group">ব্যাকএন্ড সার্ভার</div>
       <div class="card conn-card">
@@ -614,10 +669,105 @@
   </nav>
 
   <div class="toast" id="toast"></div>
+
+  <!-- ================= LOGIN OVERLAY (নতুন) ================= -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="lock-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#18b89b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h2>অ্যাডমিন লগইন</h2>
+      <p>শুধু আপনি ছাড়া আর কেউ ডেটা দেখতে বা কিছু পরিবর্তন করতে পারবে না।</p>
+      <input type="email" id="loginEmail" placeholder="ইমেইল" autocomplete="username">
+      <input type="password" id="loginPassword" placeholder="পাসওয়ার্ড" autocomplete="current-password">
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn btn-primary" style="margin-top:2px;" onclick="doLogin()">লগইন করুন</button>
+      <button class="btn btn-ghost" onclick="closeLoginOverlay()">ডিজাইন শুধু দেখুন (লগইন ছাড়া)</button>
+    </div>
+  </div>
+
 </div>
 
 <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
 <script>
+/* ================= Auth (নতুন) ================= */
+let AUTH_TOKEN = localStorage.getItem('sb_token') || '';
+
+function isLoggedIn(){ return !!AUTH_TOKEN; }
+
+function openLoginOverlay(){
+  document.getElementById('loginOverlay').classList.remove('hidden');
+}
+function closeLoginOverlay(){
+  document.getElementById('loginOverlay').classList.add('hidden');
+}
+
+function handleAuthBtnClick(){
+  if(isLoggedIn()){
+    if(confirm('লগআউট করতে চান?')) doLogout();
+  } else {
+    openLoginOverlay();
+  }
+}
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  if(!email || !password){ errEl.textContent = 'ইমেইল ও পাসওয়ার্ড দুটোই লিখুন'; return; }
+  if(!apiConnected()){ errEl.textContent = 'আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'; return; }
+
+  try{
+    const res = await fetch(API_BASE + '/auth/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if(!res.ok){ errEl.textContent = data.error || 'লগইন ব্যর্থ হয়েছে'; return; }
+    AUTH_TOKEN = data.token;
+    localStorage.setItem('sb_token', AUTH_TOKEN);
+    closeLoginOverlay();
+    updateAuthUI();
+    toast('লগইন সফল হয়েছে ✓');
+    await loadEverything();
+  }catch(e){
+    errEl.textContent = 'সার্ভারে পৌঁছানো যায়নি';
+  }
+}
+
+function doLogout(){
+  AUTH_TOKEN = '';
+  localStorage.removeItem('sb_token');
+  updateAuthUI();
+  toast('লগআউট হয়েছে');
+  renderRecentOrders(); renderOrders(); renderCustomers(); renderBroadcastHistory();
+}
+
+function updateAuthUI(){
+  const btn = document.getElementById('authBtn');
+  const accLabel = document.getElementById('accountLabel');
+  const accBtn = document.getElementById('accountBtn');
+  const dashNote = document.getElementById('lockedNoteDashboard');
+  const setNote = document.getElementById('lockedNoteSettings');
+  const noteHtml = `<div class="locked-note">🔒 লগইন করা নেই — শুধু ডিজাইন দেখা যাচ্ছে, কোনো তথ্য/অ্যাকশন কাজ করবে না। <span style="text-decoration:underline; cursor:pointer;" onclick="openLoginOverlay()">লগইন করুন</span></div>`;
+
+  if(isLoggedIn()){
+    btn.classList.remove('locked'); btn.classList.add('unlocked');
+    accLabel.textContent = 'লগইন করা আছে';
+    accBtn.textContent = 'লগআউট'; accBtn.classList.add('on'); accBtn.classList.remove('off');
+    accBtn.onclick = handleAuthBtnClick;
+    dashNote.innerHTML = ''; setNote.innerHTML = '';
+  } else {
+    btn.classList.add('locked'); btn.classList.remove('unlocked');
+    accLabel.textContent = 'লগইন করা নেই';
+    accBtn.textContent = 'লগইন করুন'; accBtn.classList.add('off'); accBtn.classList.remove('on');
+    accBtn.onclick = handleAuthBtnClick;
+    dashNote.innerHTML = noteHtml; setNote.innerHTML = noteHtml;
+  }
+}
+
 /* ---------------- Backend connection ---------------- */
 let API_BASE = 'https://faruk-smartbiz-backend-1.onrender.com/api'; // এখানে কোডে সরাসরি বসানো, Settings থেকে বদলানোও যাবে
 let orders = [];
@@ -632,9 +782,20 @@ async function apiFetch(path, options){
     toast('আগে Settings থেকে ব্যাকএন্ড সার্ভার Connect করুন');
     throw new Error('API not connected');
   }
-  const res = await fetch(API_BASE + path, Object.assign({
-    headers:{'Content-Type':'application/json'}
-  }, options));
+  if(!isLoggedIn()){
+    toast('লগইন করুন প্রথমে');
+    openLoginOverlay();
+    throw new Error('লগইন প্রয়োজন');
+  }
+  const headers = Object.assign({'Content-Type':'application/json', 'Authorization': 'Bearer ' + AUTH_TOKEN}, (options && options.headers) || {});
+  const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+  if(res.status === 401){
+    AUTH_TOKEN = '';
+    localStorage.removeItem('sb_token');
+    updateAuthUI();
+    openLoginOverlay();
+    throw new Error('সেশনের মেয়াদ শেষ, আবার লগইন করুন');
+  }
   if(!res.ok){
     const body = await res.json().catch(()=>({}));
     throw new Error(body.error || ('সার্ভার এরর: ' + res.status));
@@ -663,7 +824,7 @@ async function connectApi(){
 
   btn.textContent = 'যাচাই হচ্ছে...';
   try{
-    const res = await fetch(url + '/dashboard/summary');
+    const res = await fetch(url + '/ping');
     if(!res.ok) throw new Error('bad response');
     API_BASE = url;
     btn.classList.remove('off'); btn.classList.add('on');
@@ -680,6 +841,10 @@ async function connectApi(){
 }
 
 async function loadEverything(){
+  if(!isLoggedIn()){
+    renderRecentOrders(); renderOrders(); renderCustomers(); renderBroadcastHistory();
+    return;
+  }
   await Promise.allSettled([
     loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus()
   ]);
@@ -714,9 +879,12 @@ function initials(name){ return name.trim().charAt(0); }
 function notConnectedMsg(){
   return `<div class="empty">ব্যাকএন্ড সার্ভার সংযুক্ত নেই।<br>Settings ট্যাবে গিয়ে সার্ভার Connect করুন।</div>`;
 }
+function notLoggedInMsg(){
+  return `<div class="empty">🔒 লগইন করা নেই।<br>তথ্য দেখতে হলে আগে লগইন করুন।</div>`;
+}
 
 async function loadOrders(){
-  if(!apiConnected()){ renderRecentOrders(); renderOrders(); return; }
+  if(!apiConnected() || !isLoggedIn()){ renderRecentOrders(); renderOrders(); return; }
   try{
     orders = await apiFetch('/orders');
   }catch(e){ orders = []; }
@@ -728,6 +896,7 @@ async function loadOrders(){
 function renderRecentOrders(){
   const wrap = document.getElementById('recentOrdersList');
   if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
   if(!orders.length){ wrap.innerHTML = `<div class="empty">এখনো কোনো অর্ডার আসেনি</div>`; return; }
   wrap.innerHTML = orders.slice(0,4).map(o=>`
     <div class="card row-card">
@@ -747,6 +916,7 @@ function renderRecentOrders(){
 function renderOrders(){
   const wrap = document.getElementById('ordersList');
   if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
   const q = document.getElementById('orderSearch').value.trim().toLowerCase();
   let filtered = orders.filter(o=>{
     const matchesFilter = currentOrderFilter==='all' || o.status===currentOrderFilter;
@@ -792,7 +962,7 @@ async function updateStatus(id, newStatus){
 }
 
 async function loadCustomers(){
-  if(!apiConnected()){ renderCustomers(); return; }
+  if(!apiConnected() || !isLoggedIn()){ renderCustomers(); return; }
   try{
     customers = await apiFetch('/customers');
   }catch(e){ customers = []; }
@@ -810,6 +980,7 @@ function chatLink(c){
 function renderCustomers(){
   const wrap = document.getElementById('customersList');
   if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
   const q = document.getElementById('custSearch').value.trim().toLowerCase();
   let filtered = customers.filter(c=> !q || c.name.toLowerCase().includes(q));
   if(!filtered.length){
@@ -849,7 +1020,7 @@ async function toggleAi(id){
 }
 
 async function loadBroadcasts(){
-  if(!apiConnected()){ renderBroadcastHistory(); return; }
+  if(!apiConnected() || !isLoggedIn()){ renderBroadcastHistory(); return; }
   try{
     broadcasts = await apiFetch('/broadcast');
   }catch(e){ broadcasts = []; }
@@ -859,6 +1030,7 @@ async function loadBroadcasts(){
 function renderBroadcastHistory(){
   const wrap = document.getElementById('bcastHistory');
   if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
   if(!broadcasts.length){
     wrap.innerHTML = `<div class="empty">এখনো কোনো ব্রডকাস্ট পাঠানো হয়নি</div>`;
     return;
@@ -897,7 +1069,7 @@ function updateCharCount(){
 }
 
 async function loadSummary(){
-  if(!apiConnected()) return;
+  if(!apiConnected() || !isLoggedIn()) return;
   try{
     const s = await apiFetch('/dashboard/summary');
     document.getElementById('todayRevenue').textContent = s.todayRevenue.toLocaleString();
@@ -908,7 +1080,7 @@ async function loadSummary(){
 }
 
 function updateDashboardStats(){
-  if(!apiConnected()) return;
+  if(!apiConnected() || !isLoggedIn()) return;
   document.getElementById('todayOrders').textContent = orders.length;
   document.getElementById('pendingCount').textContent = orders.filter(o=>o.status==='Pending').length;
   document.getElementById('totalCustomers').textContent = customers.length;
@@ -933,9 +1105,24 @@ async function toggleConnect(type){
     toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন');
     return;
   }
+  if(!isLoggedIn()){
+    toast('লগইন করুন প্রথমে');
+    openLoginOverlay();
+    return;
+  }
 
-  if(isOn){
-    // ডিসকানেক্ট: খালি ভ্যালু পাঠিয়ে backend-এ connected=false করা হয়
+  // নতুন কোনো ইনপুট বক্সে ভ্যালু বসানো আছে কিনা চেক করি
+  const hasNewValue = meta.inputs.some(inp => {
+    const el = document.getElementById(inp);
+    return el && el.value.trim();
+  });
+
+  // ইতিমধ্যে সংযুক্ত থাকা অবস্থায় বাটনে চাপ দিলে —
+  // ইনপুট বক্সে নতুন ভ্যালু থাকলে সেটা আপডেট করব, খালি থাকলে তখনই শুধু ডিসকানেক্ট করব
+  if(isOn && !hasNewValue){
+    const confirmDisconnect = confirm(meta.label + ' সংযোগ বিচ্ছিন্ন করতে চান?');
+    if(!confirmDisconnect) return;
+
     const payload = {};
     meta.inputs.forEach(inp => payload[inp] = '');
     try{
@@ -947,6 +1134,7 @@ async function toggleConnect(type){
     txt.style.color = 'var(--ink-dim)';
     toast(meta.label + ' সংযোগ বিচ্ছিন্ন হয়েছে');
   } else {
+    // নতুন কানেক্ট, অথবা আগে থেকে সংযুক্ত থাকলেও নতুন ভ্যালু দিয়ে আপডেট
     const values = {};
     let missing = false;
     meta.inputs.forEach(inp => {
@@ -959,20 +1147,28 @@ async function toggleConnect(type){
       toast('আগে ' + meta.empty + ' লিখুন');
       return;
     }
+    let result;
     try{
-      await apiFetch('/settings', { method:'POST', body: JSON.stringify(values) });
+      result = await apiFetch('/settings', { method:'POST', body: JSON.stringify(values) });
     }catch(e){ toast(e.message); return; }
+
     btn.classList.remove('off'); btn.classList.add('on');
     btn.innerHTML = '● সংযুক্ত';
     txt.textContent = 'সংযুক্ত আছে';
     txt.style.color = 'var(--teal)';
-    toast(meta.label + ' সফলভাবে সংযুক্ত হয়েছে');
+
+    // Google Sheet-এ স্থায়ীভাবে সেভ না হলে সতর্ক করি — নাহলে সার্ভার রিস্টার্ট/রিডিপ্লয় হলে পুরনো Key ফিরে আসবে
+    if(result && result.sheetSaved === false){
+      toast('⚠️ ' + meta.label + ' সেভ হয়েছে কিন্তু Google Sheet-এ স্থায়ীভাবে সেভ হয়নি — রিডিপ্লয় হলে হারাতে পারে');
+    } else {
+      toast(meta.label + ' সফলভাবে সংযুক্ত/আপডেট হয়েছে ✓');
+    }
   }
   updateSystemStatus();
 }
 
 async function loadSettingsStatus(){
-  if(!apiConnected()) return;
+  if(!apiConnected() || !isLoggedIn()) return;
   try{
     const s = await apiFetch('/settings');
     ['fb','wa','sheet','ai'].forEach(type=>{
@@ -1019,10 +1215,7 @@ function updateSystemStatus(){
   aiSys.style.color = aiOn ? 'var(--teal)' : 'var(--coral)';
 }
 
-/* ================= এই অ্যাপ থেকে জেনারেট হওয়া Webhook লিংক (নতুন ফিচার) ================= */
-// এই দুটো লিংক এই অ্যাপের নিজের ব্যাকএন্ডেই থাকে (API_BASE + /webhook/...)।
-// ব্যাকএন্ডে POST /webhook/order এবং POST /webhook/ai-reply রুট দুটো যোগ করতে হবে —
-// তবেই Bazaar Admin এই লিংকে ডেটা পাঠালে এই অ্যাপ সেটা গ্রহণ করবে।
+/* ================= এই অ্যাপ থেকে জেনারেট হওয়া Webhook লিংক ================= */
 function populateWebhookLinks(){
   const orderOut = document.getElementById('orderWebhookOut');
   const aiOut = document.getElementById('aiWebhookOut');
@@ -1049,6 +1242,7 @@ async function copyWebhook(inputId){
 
 async function saveAutomationSettings(){
   if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
   const payload = {
     aiAutoReply: document.getElementById('aiAutoReplyToggle').checked,
     faqSheetLink: document.getElementById('faqSheetLink').value.trim(),
@@ -1061,9 +1255,7 @@ async function saveAutomationSettings(){
   toast('সেটিংস সংরক্ষণ করা হয়েছে ✓');
 }
 
-/* ================= Facebook auto-connect (নতুন ফিচার) ================= */
-// FB SDK init হয় fbAppId ইনপুট থেকে পাওয়া App ID দিয়ে। এই App ID কখনো গোপনীয় নয় — এটা ফ্রন্টএন্ডে থাকা স্বাভাবিক।
-// কিন্তু App Secret কখনোই এই ফাইলে বা ব্রাউজারে থাকা যাবে না — সেটা শুধু আপনার ব্যাকএন্ড সার্ভারের এনভায়রনমেন্ট ভ্যারিয়েবলে থাকবে।
+/* ================= Facebook auto-connect ================= */
 let fbSdkReady = false;
 
 window.fbAsyncInit = function() {
@@ -1080,6 +1272,7 @@ function ensureFbInit(){
 
 function autoConnectFacebook(){
   if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
   if(!ensureFbInit()) return;
 
   FB.login(function(response){
@@ -1105,7 +1298,6 @@ function fetchPagesAndConnect(userToken){
     }
 
     try{
-      // পেজ টোকেন সরাসরি ব্যাকএন্ডে পাঠানো হচ্ছে; long-lived এ এক্সচেঞ্জ ও সংরক্ষণ ব্যাকএন্ডে হবে
       await apiFetch('/settings/fb-auto', { method:'POST', body: JSON.stringify({
         pageAccessToken: page.access_token,
         pageId: page.id,
@@ -1126,12 +1318,9 @@ function fetchPagesAndConnect(userToken){
   });
 }
 
-/* ================= WhatsApp Embedded Signup অটো-কানেক্ট (নতুন ফিচার) ================= */
-// এটা কাজ করানোর আগে Meta Business Portfolio বানানো ও Meta Developer কনসোলে
-// WhatsApp Configuration ID তৈরি করা থাকতে হবে (Settings-এ "WhatsApp Configuration ID" ঘরে বসান)।
+/* ================= WhatsApp Embedded Signup অটো-কানেক্ট ================= */
 let waSignupData = { phoneNumberId: '', wabaId: '' };
 
-// Meta Embedded Signup পপআপ থেকে postMessage দিয়ে phone_number_id/waba_id পাঠায় — সেটা ধরার জন্য
 window.addEventListener('message', function(event){
   if (!event.origin.endsWith('facebook.com')) return;
   try{
@@ -1145,9 +1334,9 @@ window.addEventListener('message', function(event){
 
 function autoConnectWhatsApp(){
   if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
   const configId = document.getElementById('waConfigId').value.trim();
   if(!configId){ toast('আগে WhatsApp Configuration ID লিখুন'); return; }
-  // WhatsApp-এর জন্য আলাদা Meta App হলে সেই App ID ব্যবহার হবে, না দিলে Facebook App ID-ই ব্যবহার হবে
   const waAppId = document.getElementById('waAppId').value.trim() || document.getElementById('fbAppId').value.trim();
   if(!waAppId){ toast('আগে WhatsApp App ID অথবা Facebook App ID লিখুন'); return; }
   if(typeof FB === 'undefined'){ toast('Facebook SDK এখনো লোড হয়নি, একটু পর আবার চেষ্টা করুন'); return; }
@@ -1209,7 +1398,7 @@ async function autoConnect(){
   const txt = document.getElementById('apiStatusText');
   btn.textContent = 'যাচাই হচ্ছে...';
   try{
-    const res = await fetch(API_BASE + '/dashboard/summary');
+    const res = await fetch(API_BASE + '/ping');
     if(!res.ok) throw new Error('bad response');
     btn.classList.remove('off'); btn.classList.add('on');
     btn.innerHTML = '● সংযুক্ত';
@@ -1222,6 +1411,8 @@ async function autoConnect(){
     btn.textContent = 'Connect';
     toast('সার্ভার ঘুমিয়ে থাকতে পারে — Connect বাটনে আবার চাপুন');
   }
+  updateAuthUI();
+  if(!isLoggedIn()) openLoginOverlay();
   renderRecentOrders();
   renderOrders();
   renderCustomers();
