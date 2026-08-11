@@ -272,11 +272,11 @@
     z-index:50;
   }
   .navbtn{
-    background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:4px;
-    color:var(--ink-faint); font-family:inherit; font-size:10px; font-weight:600; cursor:pointer;
+    background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px;
+    color:var(--ink-faint); font-family:inherit; font-size:9px; font-weight:600; cursor:pointer;
     flex:1; padding:4px 0; position:relative;
   }
-  .navbtn svg{width:21px; height:21px; stroke:currentColor;}
+  .navbtn svg{width:19px; height:19px; stroke:currentColor;}
   .navbtn.active{color:var(--teal);}
   .navbtn.active::before{
     content:''; position:absolute; top:-10px; left:50%; transform:translateX(-50%);
@@ -326,6 +326,24 @@
     background:var(--gold-soft); border:1px solid rgba(232,183,75,0.3); border-radius:12px;
     font-size:11.5px; color:var(--gold); font-weight:600;
   }
+
+  /* ---- কাস্টমার প্রোফাইল শীট (নতুন) ---- */
+  .profile-overlay{
+    position:fixed; inset:0; z-index:180;
+    background:rgba(6,9,15,0.82);
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .profile-overlay.hidden{display:none;}
+  .profile-sheet{
+    width:100%; max-width:460px; max-height:85vh; overflow-y:auto;
+    background:#0e1420; border-radius:20px 20px 0 0; padding:20px 18px 30px;
+    border:1px solid var(--glass-brd-hi);
+  }
+  .profile-sheet .close-x{ float:right; cursor:pointer; color:var(--ink-dim); font-size:20px; line-height:1; }
+  .chat-bubble{ max-width:82%; padding:8px 12px; border-radius:14px; margin-bottom:8px; font-size:12.5px; line-height:1.5; }
+  .chat-bubble.user{ background:var(--glass); margin-right:auto; }
+  .chat-bubble.assistant{ background:var(--teal-soft); color:var(--teal); margin-left:auto; }
+  .cust-name-link{ cursor:pointer; text-decoration:underline; text-decoration-color:var(--ink-faint); }
 </style>
 </head>
 <body>
@@ -408,6 +426,15 @@
       </div>
 
       <div class="section-head">
+        <h2>রিপোর্ট</h2>
+        <div style="display:flex; gap:6px;">
+          <div class="chip active" data-range="week" onclick="loadReport('week')">সাপ্তাহিক</div>
+          <div class="chip" data-range="month" onclick="loadReport('month')">মাসিক</div>
+        </div>
+      </div>
+      <div id="reportContent"></div>
+
+      <div class="section-head">
         <h2>সাম্প্রতিক অর্ডার</h2>
         <a onclick="showTab('orders')">সব দেখুন →</a>
       </div>
@@ -418,6 +445,8 @@
     <section id="orders">
       <h1 class="page-title">অর্ডার সমূহ</h1>
       <p class="page-sub">সব অর্ডার এক জায়গায় ম্যানেজ করুন</p>
+
+      <button class="btn btn-ghost" style="margin:0 0 12px;" onclick="exportOrders()">📥 CSV এক্সপোর্ট করুন</button>
 
       <div class="search-wrap">
         <div class="search-box">
@@ -467,6 +496,13 @@
         <h2>ব্রডকাস্ট হিস্টোরি</h2>
       </div>
       <div id="bcastHistory"></div>
+    </section>
+
+    <!-- ================= EMAIL LOG (নতুন) ================= -->
+    <section id="emaillog">
+      <h1 class="page-title">ইমেইল কনফার্মেশন লগ</h1>
+      <p class="page-sub">কোন কাস্টমারকে অর্ডার কনফার্মেশন ইমেইল পাঠানো হয়েছে</p>
+      <div id="emailLogsList"></div>
     </section>
 
     <!-- ================= SETTINGS ================= -->
@@ -627,12 +663,6 @@
         </div>
       </div>
 
-      <div class="settings-group">📧 ইমেইল কনফার্মেশন লগ</div>
-      <div class="card conn-card">
-        <div class="hint" style="margin-bottom:10px;">কোন কাস্টমারকে অর্ডার কনফার্মেশন ইমেইল পাঠানো হয়েছে তার হিস্টোরি (কাস্টমার নিজে থেকে ইমেইল দিলে তবেই পাঠানো হয়)।</div>
-        <div id="emailLogsList"></div>
-      </div>
-
       <div class="settings-group">ব্যবসার তথ্য</div>
       <div class="card set-row">
         <div class="l">ডেলিভারি চার্জ</div>
@@ -687,6 +717,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9-9"/><path d="M4 11a5 5 0 0 1 5-5"/><circle cx="4" cy="16" r="2"/><path d="M4 18v3"/><path d="M13 2c5 0 9 4 9 9"/></svg>
       Broadcast
     </button>
+    <button class="navbtn" data-tab="emaillog" onclick="showTab('emaillog')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+      ইমেইল
+    </button>
     <button class="navbtn" data-tab="settings" onclick="showTab('settings')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
       Settings
@@ -708,6 +742,14 @@
       <div class="login-err" id="loginErr"></div>
       <button class="btn btn-primary" style="margin-top:2px;" onclick="doLogin()">লগইন করুন</button>
       <button class="btn btn-ghost" onclick="closeLoginOverlay()">ডিজাইন শুধু দেখুন (লগইন ছাড়া)</button>
+    </div>
+  </div>
+
+  <!-- ================= কাস্টমার প্রোফাইল ওভারলে (নতুন) ================= -->
+  <div class="profile-overlay hidden" id="profileOverlay">
+    <div class="profile-sheet">
+      <span class="close-x" onclick="closeProfile()">✕</span>
+      <div id="profileContent"></div>
     </div>
   </div>
 
@@ -871,8 +913,91 @@ async function loadEverything(){
     return;
   }
   await Promise.allSettled([
-    loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus(), loadEmailLogs()
+    loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus(), loadEmailLogs(), loadReport('week')
   ]);
+}
+
+async function loadReport(range){
+  document.querySelectorAll('[data-range]').forEach(c=>c.classList.toggle('active', c.dataset.range===range));
+  const wrap = document.getElementById('reportContent');
+  if(!wrap) return;
+  if(!apiConnected() || !isLoggedIn()){ wrap.innerHTML=''; return; }
+  try{
+    const r = await apiFetch('/reports?range=' + range);
+    const productsHtml = r.topProducts.length
+      ? r.topProducts.map((p,i)=>`
+        <div class="card row-card" style="padding:10px 14px; margin-bottom:6px;">
+          <div class="row-main"><div class="t1">${i+1}. ${p.product}</div></div>
+          <div class="amt">${p.qty} বিক্রি</div>
+        </div>`).join('')
+      : '<div class="empty">এই সময়ে কোনো অর্ডার নেই</div>';
+    const platformHtml = r.platformBreakdown.length
+      ? r.platformBreakdown.map(p => `<div class="t2" style="margin-top:3px;">${p.platform || 'অজানা'}: <b style="color:var(--ink)">${p.count}</b></div>`).join('')
+      : '';
+    wrap.innerHTML = `
+      <div class="card" style="padding:14px; margin-bottom:10px;">
+        <div class="label">মোট অর্ডার: <b class="num" style="color:var(--ink)">${r.totalOrders}</b> · মোট রেভিনিউ: <b class="num" style="color:var(--teal)">৳${r.totalRevenue.toLocaleString()}</b></div>
+        ${platformHtml}
+      </div>
+      <div class="section-head" style="margin-top:4px;"><h2>বেস্ট সেলিং প্রোডাক্ট</h2></div>
+      ${productsHtml}
+    `;
+  }catch(e){ wrap.innerHTML = `<div class="empty">রিপোর্ট লোড করা যায়নি</div>`; }
+}
+
+async function exportOrders(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('আগে লগইন করুন'); openLoginOverlay(); return; }
+  try{
+    const res = await fetch(API_BASE + '/orders/export', { headers: { Authorization: 'Bearer ' + AUTH_TOKEN } });
+    if(res.status === 401){ toast('সেশনের মেয়াদ শেষ, আবার লগইন করুন'); AUTH_TOKEN=''; localStorage.removeItem('sb_token'); updateAuthUI(); openLoginOverlay(); return; }
+    if(!res.ok) throw new Error('এক্সপোর্ট ব্যর্থ হয়েছে');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'orders.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('অর্ডার এক্সপোর্ট হয়েছে ✓');
+  }catch(e){ toast(e.message); }
+}
+
+async function openCustomerProfile(id){
+  const overlay = document.getElementById('profileOverlay');
+  const content = document.getElementById('profileContent');
+  overlay.classList.remove('hidden');
+  content.innerHTML = '<div class="empty">লোড হচ্ছে...</div>';
+  try{
+    const data = await apiFetch('/customers/' + id);
+    const { customer, orders, conversation } = data;
+    const ordersHtml = orders.length
+      ? orders.map(o => `
+        <div class="card row-card" style="margin-bottom:8px;">
+          <div class="row-main">
+            <div class="t1">${o.product} x${o.qty}</div>
+            <div class="t2">${o.id} · ৳${(o.price||0)*(o.qty||1)}</div>
+          </div>
+          ${statusBadge(o.status)}
+        </div>`).join('')
+      : '<div class="empty">কোনো অর্ডার নেই</div>';
+    const chatHtml = conversation.length
+      ? conversation.map(m => `<div class="chat-bubble ${m.role==='user'?'user':'assistant'}">${m.text}</div>`).join('')
+      : '<div class="empty">কোনো কথোপকথন নেই</div>';
+    content.innerHTML = `
+      <h1 class="page-title" style="margin-top:0;">${customer.name}</h1>
+      <p class="page-sub">${customer.phone || ''} ${customer.phone ? '· ' : ''}${customer.platform === 'facebook' ? 'Messenger' : customer.platform === 'whatsapp' ? 'WhatsApp' : 'ওয়েবসাইট'}</p>
+      <div class="section-head"><h2>অর্ডার হিস্টোরি</h2></div>
+      ${ordersHtml}
+      <div class="section-head"><h2>কথোপকথন</h2></div>
+      <div style="display:flex; flex-direction:column;">${chatHtml}</div>
+    `;
+  }catch(e){
+    content.innerHTML = `<div class="empty">লোড করা যায়নি: ${e.message}</div>`;
+  }
+}
+
+function closeProfile(){
+  document.getElementById('profileOverlay').classList.add('hidden');
 }
 
 async function loadEmailLogs(){
@@ -1044,7 +1169,7 @@ function renderCustomers(){
     <div class="card row-card">
       ${avatar}
       <div class="row-main">
-        <div class="t1">${c.name}</div>
+        <div class="t1 cust-name-link" onclick="openCustomerProfile('${c.id}')">${c.name}</div>
         <div class="t2">${c.phone || platformLabel} · ${platformLabel} · মোট অর্ডার ${c.orders}</div>
         ${link ? `<a href="${link}" target="_blank" style="font-size:11px; color:var(--teal); font-weight:600; text-decoration:none;">${linkLabel}-এ চ্যাট খুলুন →</a>` : ''}
       </div>
