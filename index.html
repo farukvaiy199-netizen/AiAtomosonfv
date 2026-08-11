@@ -580,6 +580,25 @@
         <div class="hint">এই কী দিয়ে AI কাস্টমারের মেসেজের উত্তর দেবে। প্রোভাইডার পাল্টালে সেই প্রোভাইডারের নিজস্ব কী বসাতে হবে — Groq আর OpenAI-এর কী একে অপরের জায়গায় কাজ করে না।</div>
       </div>
 
+      <div class="card conn-card">
+        <div class="conn-top">
+          <div>
+            <div class="l">AI API Key (ব্যাকআপ)</div>
+            <div class="r" id="ai2StatusText">সংযুক্ত নয়</div>
+          </div>
+          <button class="connect-btn off" id="ai2Btn" onclick="toggleConnect('ai2')">Connect</button>
+        </div>
+        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">প্রোভাইডার বেছে নিন</div>
+        <select id="aiProvider2" class="status-select" style="width:100%; margin-bottom:8px; padding:9px 11px;">
+          <option value="groq">Groq (Llama)</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+          <option value="openrouter">OpenRouter</option>
+          <option value="gemini">Google Gemini</option>
+        </select>
+        <input type="password" id="aiKey2" class="token-input" placeholder="ব্যাকআপ প্রোভাইডারের API Key পেস্ট করুন">
+        <div class="hint">প্রধান AI Key কোটা/রেট-লিমিটে আটকে গেলে স্বয়ংক্রিয়ভাবে এই ব্যাকআপ Key দিয়ে চেষ্টা করা হবে। ছবি দেখে প্রোডাক্ট বলা বা ভয়েস মেসেজ শোনার জন্যও অন্তত একটা (প্রধান বা ব্যাকআপ) Groq/OpenAI/Gemini Key থাকা দরকার।</div>
+      </div>
+
       <div class="settings-group">🔗 আপনার Webhook লিংক (Bazaar Admin-এ বসান)</div>
       <div class="card conn-card">
         <div class="l" style="margin-bottom:8px;">অর্ডার Webhook URL</div>
@@ -606,6 +625,12 @@
         <div class="hint">
           এই লিংকটা কপি করে আপনার Bazaar Admin-এর Settings ট্যাবের "AI অটোমেশন Webhook URL" ঘরে বসান। কাস্টমার Bazaar Admin-এর চ্যাটে মেসেজ পাঠালে সেটা এই লিংকে চলে আসবে, উপরের টগল চালু থাকলে এই অ্যাপে সংযুক্ত AI Key (Settings → AI ইঞ্জিন) দিয়ে উত্তর তৈরি হয়ে সাথে সাথে Bazaar Admin-এ ফেরত যাবে। কাজ করাতে হলে Settings → AI ইঞ্জিন-এ একটা API Key সংযুক্ত থাকতে হবে।
         </div>
+      </div>
+
+      <div class="settings-group">📧 ইমেইল কনফার্মেশন লগ</div>
+      <div class="card conn-card">
+        <div class="hint" style="margin-bottom:10px;">কোন কাস্টমারকে অর্ডার কনফার্মেশন ইমেইল পাঠানো হয়েছে তার হিস্টোরি (কাস্টমার নিজে থেকে ইমেইল দিলে তবেই পাঠানো হয়)।</div>
+        <div id="emailLogsList"></div>
       </div>
 
       <div class="settings-group">ব্যবসার তথ্য</div>
@@ -846,8 +871,29 @@ async function loadEverything(){
     return;
   }
   await Promise.allSettled([
-    loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus()
+    loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus(), loadEmailLogs()
   ]);
+}
+
+async function loadEmailLogs(){
+  if(!apiConnected() || !isLoggedIn()) return;
+  const wrap = document.getElementById('emailLogsList');
+  if(!wrap) return;
+  try{
+    const logs = await apiFetch('/email-logs');
+    if(!logs.length){ wrap.innerHTML = `<div class="empty">এখনো কোনো ইমেইল পাঠানো হয়নি</div>`; return; }
+    wrap.innerHTML = logs.map(l => `
+      <div class="row-card" style="padding:10px 0; border-bottom:1px solid var(--glass-brd); margin-bottom:0;">
+        <div class="row-main">
+          <div class="t1">${l.to}</div>
+          <div class="t2">${l.customerName || ''} · অর্ডার ${l.orderId} · ${l.date}</div>
+        </div>
+        <div class="row-end">
+          <span class="badge ${l.sent ? 'delivered' : 'cancelled'}">${l.sent ? 'পাঠানো হয়েছে' : 'ব্যর্থ'}</span>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){ wrap.innerHTML = `<div class="empty">লগ লোড করা যায়নি</div>`; }
 }
 
 /* ---------------- Tab switching ---------------- */
@@ -991,9 +1037,12 @@ function renderCustomers(){
     const link = chatLink(c);
     const linkLabel = c.platform === 'website' ? 'WhatsApp' : (c.platform === 'facebook' ? 'Messenger' : 'WhatsApp');
     const platformLabel = c.platform === 'facebook' ? 'Messenger' : c.platform === 'whatsapp' ? 'WhatsApp' : c.platform === 'website' ? 'ওয়েবসাইট' : (c.platform || '');
+    const avatar = c.photoUrl
+      ? `<img src="${c.photoUrl}" style="width:40px;height:40px;border-radius:11px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div class=row-avatar>${initials(c.name)}</div>'">`
+      : `<div class="row-avatar">${initials(c.name)}</div>`;
     return `
     <div class="card row-card">
-      <div class="row-avatar">${initials(c.name)}</div>
+      ${avatar}
       <div class="row-main">
         <div class="t1">${c.name}</div>
         <div class="t2">${c.phone || platformLabel} · ${platformLabel} · মোট অর্ডার ${c.orders}</div>
@@ -1092,7 +1141,8 @@ const connMeta = {
   fb:    {inputs:['fbToken'],               settingsKey:'fbToken',    label:'Facebook',     empty:'Access Token'},
   wa:    {inputs:['waToken','waPhoneNumberId'], settingsKey:'waToken', label:'WhatsApp',     empty:'Access Token / Phone Number ID'},
   sheet: {inputs:['sheetLink'],             settingsKey:'sheetLink',  label:'Google Sheet', empty:'শিট লিংক'},
-  ai:    {inputs:['aiKey', 'aiProvider'],   settingsKey:'aiKey',      label:'AI API',       empty:'API Key'}
+  ai:    {inputs:['aiKey', 'aiProvider'],   settingsKey:'aiKey',      label:'AI API',       empty:'API Key'},
+  ai2:   {inputs:['aiKey2', 'aiProvider2'], settingsKey:'aiKey2',     label:'ব্যাকআপ AI API', empty:'ব্যাকআপ API Key'}
 };
 
 async function toggleConnect(type){
@@ -1171,7 +1221,7 @@ async function loadSettingsStatus(){
   if(!apiConnected() || !isLoggedIn()) return;
   try{
     const s = await apiFetch('/settings');
-    ['fb','wa','sheet','ai'].forEach(type=>{
+    ['fb','wa','sheet','ai','ai2'].forEach(type=>{
       const on = s.connected && s.connected[type];
       const btn = document.getElementById(type+'Btn');
       const txt = document.getElementById(type+'StatusText');
@@ -1196,6 +1246,7 @@ async function loadSettingsStatus(){
       storageEl.style.color = s.sheetStorageConfigured ? 'var(--teal)' : 'var(--coral)';
     }
     if(s.aiProvider) document.getElementById('aiProvider').value = s.aiProvider;
+    if(s.aiProvider2) document.getElementById('aiProvider2').value = s.aiProvider2;
     if(s.fbAppId) document.getElementById('fbAppId').value = s.fbAppId;
     if(s.waConfigId) document.getElementById('waConfigId').value = s.waConfigId;
     if(s.waAppId) document.getElementById('waAppId').value = s.waAppId;
