@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>Faruk's SmartBiz — Admin Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0e16">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes"> 
   :root{
     --bg-0:#0a0e16;
     --bg-1:#0e1420;
@@ -1599,5 +1601,8 @@ async function autoConnect(){
 autoConnect();
 
 </script>
+  <script>
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+  </script>
 </body>
 </html>
