@@ -8,8 +8,10 @@
 <meta name="theme-color" content="#0a0e16">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes"> 
-  <style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
   :root{
     --bg-0:#0a0e16;
     --bg-1:#0e1420;
@@ -267,7 +269,7 @@
   nav.bottomnav{
     position:fixed; bottom:0; left:50%; transform:translateX(-50%);
     width:100%; max-width:460px;
-    padding:10px 14px calc(12px + env(safe-area-inset-bottom));
+    padding:10px 4px calc(12px + env(safe-area-inset-bottom));
     background:rgba(10,14,22,0.78);
     backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
     border-top:1px solid var(--glass-brd);
@@ -501,6 +503,24 @@
       <div id="bcastHistory"></div>
     </section>
 
+    <!-- ================= AI শেখান (নতুন) ================= -->
+    <section id="aitrain">
+      <h1 class="page-title">AI-কে শেখান</h1>
+      <p class="page-sub">এখানে যা বলবেন, AI কাস্টমারের সাথে কথা বলার সময় সেটাই মানবে</p>
+
+      <div class="card conn-card">
+        <div id="ownerChatBox" style="display:flex; flex-direction:column; max-height:280px; overflow-y:auto; min-height:70px;"></div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <input type="text" id="ownerChatInput" class="token-input" placeholder="যেমন: ১ কেজি মধু এখন স্টকে আছে" onkeydown="if(event.key==='Enter') sendOwnerMsg()">
+          <button class="connect-btn off" style="flex-shrink:0; padding:0 16px;" onclick="sendOwnerMsg()">পাঠান</button>
+        </div>
+        <div class="hint">উদাহরণ: "ক্যুমিন ফ্লাওয়ার হানি আবার স্টকে এসেছে" · "কেউ ডেলিভারি কতদিন লাগে জানতে চাইলে বলবে ঢাকায় ২ দিন, বাইরে ৪ দিন" · "ঈদ পর্যন্ত সব প্রোডাক্টে ১০% ছাড়"।<br>⚠️ অর্ডার নেওয়ার সময় সিস্টেম Google Sheet-এর <b>Stock</b> কলামও দেখে, তাই প্রোডাক্ট আবার তুললে শিটেও Stock বাড়িয়ে দেবেন।</div>
+      </div>
+
+      <div class="section-head"><h2>সক্রিয় নির্দেশনা</h2></div>
+      <div id="aiRulesList"></div>
+    </section>
+
     <!-- ================= EMAIL LOG (নতুন) ================= -->
     <section id="emaillog">
       <h1 class="page-title">ইমেইল কনফার্মেশন লগ</h1>
@@ -720,6 +740,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9-9"/><path d="M4 11a5 5 0 0 1 5-5"/><circle cx="4" cy="16" r="2"/><path d="M4 18v3"/><path d="M13 2c5 0 9 4 9 9"/></svg>
       Broadcast
     </button>
+    <button class="navbtn" data-tab="aitrain" onclick="showTab('aitrain')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+      AI
+    </button>
     <button class="navbtn" data-tab="emaillog" onclick="showTab('emaillog')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
       ইমেইল
@@ -916,7 +940,7 @@ async function loadEverything(){
     return;
   }
   await Promise.allSettled([
-    loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus(), loadEmailLogs(), loadReport('week')
+    loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus(), loadEmailLogs(), loadReport('week'), loadAiRules()
   ]);
 }
 
@@ -946,6 +970,76 @@ async function loadReport(range){
       ${productsHtml}
     `;
   }catch(e){ wrap.innerHTML = `<div class="empty">রিপোর্ট লোড করা যায়নি</div>`; }
+}
+
+/* ---------------- AI-কে শেখান (নতুন) ---------------- */
+let ownerChatHistory = [];
+
+function escHtml(str){
+  return String(str == null ? '' : str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderOwnerChat(){
+  const box = document.getElementById('ownerChatBox');
+  if(!box) return;
+  if(!ownerChatHistory.length){
+    box.innerHTML = '<div class="empty" style="padding:14px 6px;">AI-কে কিছু বলুন, যেমন কোন প্রোডাক্ট স্টকে আছে বা কোনো প্রশ্নের কী জবাব দেবে।</div>';
+    return;
+  }
+  box.innerHTML = ownerChatHistory.map(m =>
+    `<div class="chat-bubble ${m.role === 'user' ? 'user' : 'assistant'}">${escHtml(m.text)}</div>`
+  ).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function loadAiRules(){
+  const wrap = document.getElementById('aiRulesList');
+  if(!wrap) return;
+  if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
+  try{
+    const rules = await apiFetch('/ai-rules');
+    if(!rules.length){ wrap.innerHTML = '<div class="empty">এখনো কোনো নির্দেশনা নেই</div>'; return; }
+    wrap.innerHTML = rules.map(r => `
+      <div class="card row-card">
+        <div class="row-main"><div class="t1" style="white-space:normal; line-height:1.5;">${escHtml(r.text)}</div></div>
+        <button class="connect-btn off" style="background:var(--coral-soft); color:var(--coral); flex-shrink:0;" onclick="deleteAiRule('${r.id}')">মুছুন</button>
+      </div>`).join('');
+  }catch(e){ wrap.innerHTML = '<div class="empty">নির্দেশনা লোড করা যায়নি</div>'; }
+  renderOwnerChat();
+}
+
+async function sendOwnerMsg(){
+  const input = document.getElementById('ownerChatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+
+  const historyForServer = ownerChatHistory.slice(-6);
+  ownerChatHistory.push({ role:'user', text });
+  input.value = '';
+  ownerChatHistory.push({ role:'assistant', text:'ভাবছি...' });
+  renderOwnerChat();
+
+  try{
+    const res = await apiFetch('/ai-rules/chat', { method:'POST', body: JSON.stringify({ message:text, history:historyForServer }) });
+    ownerChatHistory[ownerChatHistory.length - 1] = { role:'assistant', text: res.reply || 'ঠিক আছে' };
+    renderOwnerChat();
+    if(res.saved){ toast('নির্দেশনা সংরক্ষিত হয়েছে ✓'); loadAiRules(); }
+  }catch(e){
+    ownerChatHistory[ownerChatHistory.length - 1] = { role:'assistant', text: e.message || 'কিছু একটা ভুল হয়েছে' };
+    renderOwnerChat();
+  }
+}
+
+async function deleteAiRule(id){
+  if(!confirm('এই নির্দেশনাটা মুছে ফেলতে চান?')) return;
+  try{
+    await apiFetch('/ai-rules/' + id, { method:'DELETE' });
+    toast('নির্দেশনা মুছে ফেলা হয়েছে');
+    loadAiRules();
+  }catch(e){ toast(e.message); }
 }
 
 async function exportOrders(){
@@ -1602,8 +1696,8 @@ async function autoConnect(){
 autoConnect();
 
 </script>
-  <script>
+<script>
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
-  </script>
+</script>
 </body>
 </html>
