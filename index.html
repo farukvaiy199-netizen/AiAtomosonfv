@@ -91,9 +91,10 @@
     background:var(--glass); border:1px solid var(--glass-brd);
     display:flex; align-items:center; justify-content:center; position:relative; cursor:pointer;
   }
-  .bell::after{
-    content:''; position:absolute; top:8px; right:9px; width:6px; height:6px;
-    border-radius:50%; background:var(--coral); box-shadow:0 0 0 2px var(--bg-1);
+  .bell-count{
+    position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:9px;
+    background:var(--coral); color:#fff; font-size:10px; font-weight:700; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; box-shadow:0 0 0 2px var(--bg-1);
   }
   .topbar-actions{display:flex; align-items:center; gap:8px;}
   .auth-btn{
@@ -368,7 +369,8 @@
       <div class="auth-btn locked" id="authBtn" onclick="handleAuthBtnClick()" title="লগইন">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </div>
-      <div class="bell" onclick="toast('৩টি নতুন নোটিফিকেশন')">
+      <div class="bell" onclick="openNotifications()">
+        <span class="bell-count" id="bellCount" style="display:none;">0</span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c7cede" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       </div>
     </div>
@@ -427,8 +429,8 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f05d5e" stroke-width="2.2" stroke-linecap="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
           </div>
           <div class="label">লো স্টক প্রোডাক্ট</div>
-          <div class="value num" id="lowStock">3</div>
-          <div class="delta" style="color:var(--coral)">নজর দিন</div>
+          <div class="value num" id="lowStock">০</div>
+          <div class="delta" style="color:var(--coral); cursor:pointer;" onclick="openStock()">স্টক দেখুন →</div>
         </div>
       </div>
 
@@ -454,6 +456,10 @@
       <p class="page-sub">সব অর্ডার এক জায়গায় ম্যানেজ করুন</p>
 
       <button class="btn btn-ghost" style="margin:0 0 12px;" onclick="exportOrders()">📥 CSV এক্সপোর্ট করুন</button>
+      <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-dim); margin:-4px 0 12px;">
+        <input type="checkbox" id="notifyCustomerChk" checked style="width:16px; height:16px; accent-color:var(--teal);">
+        স্ট্যাটাস বদলালে কাস্টমারকে মেসেজ পাঠান
+      </label>
 
       <div class="search-wrap">
         <div class="search-box">
@@ -789,6 +795,33 @@
     </div>
   </div>
 
+  <!-- ================= নোটিফিকেশন ওভারলে (নতুন) ================= -->
+  <div class="profile-overlay hidden" id="notifOverlay">
+    <div class="profile-sheet">
+      <span class="close-x" onclick="closeNotifications()">✕</span>
+      <h1 class="page-title" style="margin-top:0;">নোটিফিকেশন</h1>
+      <button class="btn btn-primary" id="pushBtn" style="margin-top:6px; display:none;"></button>
+      <div class="hint" id="pushNote" style="margin:6px 0 14px; font-size:11px; color:var(--ink-faint);"></div>
+      <div id="notifList"></div>
+    </div>
+  </div>
+
+  <!-- ================= স্টক ওভারলে (নতুন) ================= -->
+  <div class="profile-overlay hidden" id="stockOverlay">
+    <div class="profile-sheet">
+      <span class="close-x" onclick="closeStock()">✕</span>
+      <h1 class="page-title" style="margin-top:0;">স্টক</h1>
+      <p class="page-sub">এখানে সংখ্যা বসালে অর্ডারে নিজে কমবে, বাতিল করলে ফিরবে, আর AI এখান থেকেই স্টক জানবে।</p>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+        <span style="font-size:12px; color:var(--ink-dim); white-space:nowrap;">কম স্টক সীমা</span>
+        <input type="number" min="0" id="stockThreshold" class="token-input" style="margin:0; width:70px; text-align:center;">
+        <button class="connect-btn off" onclick="saveStockThreshold()">সেভ</button>
+        <button class="connect-btn off" style="margin-left:auto; background:var(--glass); color:var(--ink); border:1px solid var(--glass-brd);" onclick="importStockFromSheet()">শিট থেকে আনুন</button>
+      </div>
+      <div id="stockList"></div>
+    </div>
+  </div>
+
   <!-- ================= কাস্টমার প্রোফাইল ওভারলে (নতুন) ================= -->
   <div class="profile-overlay hidden" id="profileOverlay">
     <div class="profile-sheet">
@@ -957,7 +990,7 @@ async function loadEverything(){
     return;
   }
   await Promise.allSettled([
-    loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus(), loadEmailLogs(), loadReport('week'), loadAiRules(), loadAiUsage(), loadAiImages()
+    loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus(), loadEmailLogs(), loadReport('week'), loadAiRules(), loadAiUsage(), loadAiImages(), loadNotifCount()
   ]);
 }
 
@@ -1189,6 +1222,157 @@ async function sendOwnerMsg(){
   }
 }
 
+/* ---------------- নোটিফিকেশন, পুশ, স্টক, হস্তান্তর (নতুন) ---------------- */
+async function loadNotifCount(){
+  if(!apiConnected() || !isLoggedIn()) return;
+  try{
+    const r = await apiFetch('/notifications/count');
+    const el = document.getElementById('bellCount');
+    if(!el) return;
+    el.textContent = r.unread > 99 ? '99+' : r.unread;
+    el.style.display = r.unread > 0 ? 'flex' : 'none';
+  }catch(e){}
+}
+
+async function openNotifications(){
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  document.getElementById('notifOverlay').classList.remove('hidden');
+  const box = document.getElementById('notifList');
+  box.innerHTML = '<div class="empty">লোড হচ্ছে...</div>';
+  updatePushButton();
+  try{
+    const r = await apiFetch('/notifications');
+    box.innerHTML = r.items.length ? r.items.map(n => `
+      <div class="card row-card" style="${n.read ? '' : 'border-color:rgba(24,184,155,0.5);'}">
+        <div class="row-main">
+          <div class="t1" style="white-space:normal;">${escHtml(n.title)}</div>
+          <div class="t2">${escHtml(n.body)}</div>
+          <div class="t2" style="color:var(--ink-faint);">${new Date(n.createdAt).toLocaleString('bn-BD')}</div>
+        </div>
+      </div>`).join('') : '<div class="empty">এখনো কোনো নোটিফিকেশন নেই</div>';
+    if(r.unread > 0){ await apiFetch('/notifications/read', { method:'POST', body:'{}' }); loadNotifCount(); }
+  }catch(e){ box.innerHTML = '<div class="empty">লোড করা যায়নি</div>'; }
+}
+function closeNotifications(){ document.getElementById('notifOverlay').classList.add('hidden'); }
+
+function urlBase64ToUint8Array(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g,'+').replace(/_/g,'/'));
+  const out = new Uint8Array(raw.length);
+  for(let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+function pushSupported(){ return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window); }
+
+async function updatePushButton(){
+  const btn = document.getElementById('pushBtn');
+  const note = document.getElementById('pushNote');
+  if(!btn) return;
+  if(!pushSupported()){ btn.style.display = 'none'; note.textContent = 'এই ব্রাউজারে পুশ নোটিফিকেশন চলে না।'; return; }
+  let subscribed = false;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    subscribed = !!(await reg.pushManager.getSubscription()) && Notification.permission === 'granted';
+  }catch(e){}
+  btn.style.display = 'block';
+  btn.textContent = subscribed ? '🔔 টেস্ট নোটিফিকেশন পাঠান' : '📲 ফোনে নোটিফিকেশন চালু করুন';
+  btn.onclick = subscribed ? sendTestPush : enablePush;
+  note.textContent = subscribed
+    ? 'এই ফোনে নোটিফিকেশন চালু আছে।'
+    : 'চালু করলে নতুন অর্ডার, স্টক কম, বা কাস্টমার ডাকলে অ্যাপ বন্ধ থাকলেও ফোনে জানাবে।';
+}
+
+async function enablePush(){
+  if(!pushSupported()){ toast('এই ব্রাউজারে পুশ চলবে না'); return; }
+  const perm = await Notification.requestPermission();
+  if(perm !== 'granted'){ toast('অনুমতি দেওয়া হয়নি — ফোনের সেটিংস থেকে নোটিফিকেশন চালু করুন'); return; }
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const { publicKey } = await apiFetch('/push/public-key');
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
+    await apiFetch('/push/subscribe', { method:'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
+    toast('নোটিফিকেশন চালু হয়েছে ✓');
+    updatePushButton();
+  }catch(e){ toast('চালু করা যায়নি: ' + e.message); }
+}
+
+async function sendTestPush(){
+  try{ await apiFetch('/push/test', { method:'POST', body:'{}' }); toast('টেস্ট পাঠানো হয়েছে'); }
+  catch(e){ toast(e.message); }
+}
+
+async function markHandled(id){
+  try{
+    await apiFetch('/customers/' + id + '/handled', { method:'PATCH', body:'{}' });
+    const c = customers.find(x => x.id === id);
+    if(c) c.needsHuman = false;
+    renderCustomers();
+  }catch(e){ toast(e.message); }
+}
+
+/* ---- স্টক ---- */
+let stockItemsCache = [];
+async function openStock(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  document.getElementById('stockOverlay').classList.remove('hidden');
+  await loadStock();
+}
+function closeStock(){
+  document.getElementById('stockOverlay').classList.add('hidden');
+  loadSummary();
+}
+async function loadStock(){
+  const box = document.getElementById('stockList');
+  box.innerHTML = '<div class="empty">লোড হচ্ছে...</div>';
+  try{
+    const r = await apiFetch('/stock');
+    stockItemsCache = r.items;
+    document.getElementById('stockThreshold').value = r.threshold;
+    if(!r.items.length){ box.innerHTML = '<div class="empty">শিটে কোনো প্রোডাক্ট পাওয়া যায়নি। আগে Settings-এ Google Sheet সংযুক্ত করুন।</div>'; return; }
+    box.innerHTML = r.items.map((it, i) => {
+      const low = it.qty !== null && it.qty <= r.threshold;
+      const state = it.qty === null ? 'এখনো বসানো হয়নি' : (it.qty <= 0 ? '❌ স্টক শেষ' : (low ? '⚠️ কম' : '✓ আছে'));
+      return `
+      <div class="card row-card">
+        <div class="row-main">
+          <div class="t1" style="white-space:normal;">${escHtml(it.name)}</div>
+          <div class="t2">${state}${it.sheetStock !== null ? ' · শিটে: ' + it.sheetStock : ''}</div>
+        </div>
+        <input type="number" min="0" class="token-input" id="stk_${i}" value="${it.qty === null ? '' : it.qty}" placeholder="সংখ্যা" style="width:74px; margin:0; text-align:center;">
+        <button class="connect-btn off" onclick="saveStock(${i})">সেভ</button>
+      </div>`;
+    }).join('');
+  }catch(e){ box.innerHTML = '<div class="empty">স্টক লোড করা যায়নি</div>'; }
+}
+async function saveStock(i){
+  const it = stockItemsCache[i];
+  const v = document.getElementById('stk_' + i).value;
+  try{
+    await apiFetch('/stock', { method:'POST', body: JSON.stringify({ name: it.name, qty: v === '' ? null : Number(v) }) });
+    toast('স্টক সেভ হয়েছে ✓');
+    loadStock();
+  }catch(e){ toast(e.message); }
+}
+async function importStockFromSheet(){
+  try{
+    const r = await apiFetch('/stock/import', { method:'POST', body:'{}' });
+    toast(r.imported + 'টি প্রোডাক্টের সংখ্যা শিট থেকে আনা হয়েছে');
+    loadStock();
+  }catch(e){ toast(e.message); }
+}
+async function saveStockThreshold(){
+  const v = parseInt(document.getElementById('stockThreshold').value, 10);
+  if(!(v >= 0)){ toast('সঠিক সংখ্যা দিন'); return; }
+  try{
+    await apiFetch('/settings', { method:'POST', body: JSON.stringify({ lowStockThreshold: v }) });
+    toast('সেভ হয়েছে ✓');
+    loadStock();
+  }catch(e){ toast(e.message); }
+}
+
+
 async function exportOrders(){
   if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
   if(!isLoggedIn()){ toast('আগে লগইন করুন'); openLoginOverlay(); return; }
@@ -1364,6 +1548,7 @@ function renderOrders(){
           <option ${o.status==='Delivered'?'selected':''}>Delivered</option>
           <option ${o.status==='Cancelled'?'selected':''}>Cancelled</option>
         </select>
+        ${o.notifyStatus==='failed' ? `<div class="t2" style="color:var(--coral);">⚠️ ${escHtml(o.notifyNote||'কাস্টমারকে জানানো যায়নি')}</div>` : ''}
       </div>
       <div class="row-end">
         <div class="amt">৳${o.price.toLocaleString()}</div>
@@ -1374,15 +1559,21 @@ function renderOrders(){
 }
 
 async function updateStatus(id, newStatus){
+  const chk = document.getElementById('notifyCustomerChk');
+  const notify = chk ? chk.checked : true;
+  let res;
   try{
-    await apiFetch('/orders/' + id, { method:'PATCH', body: JSON.stringify({status:newStatus}) });
+    res = await apiFetch('/orders/' + id, { method:'PATCH', body: JSON.stringify({ status:newStatus, notify }) });
   }catch(e){ toast(e.message); renderOrders(); return; }
   const o = orders.find(x=>x.id===id);
-  if(o) o.status = newStatus;
+  if(o){ o.status = newStatus; if(res){ o.notifyStatus = res.notifyStatus; o.notifyNote = res.notifyNote; } }
   renderOrders();
   renderRecentOrders();
   updateDashboardStats();
-  toast(`${id} → ${newStatus} হিসেবে আপডেট হয়েছে`);
+  let extra = '';
+  if(res && res.notifyStatus === 'sent') extra = ' — কাস্টমারকে জানানো হয়েছে ✓';
+  else if(res && res.notifyStatus === 'failed') extra = ' — ⚠️ কাস্টমারকে জানানো যায়নি';
+  toast(`${id} → ${newStatus}${extra}`);
 }
 
 async function loadCustomers(){
@@ -1424,6 +1615,7 @@ function renderCustomers(){
       <div class="row-main">
         <div class="t1 cust-name-link" onclick="openCustomerProfile('${c.id}')">${escHtml(customerDisplayName(c))}</div>
         <div class="t2">${c.phone || platformLabel} · ${platformLabel} · মোট অর্ডার ${c.orders}</div>
+        ${c.needsHuman ? `<div class="t2" style="color:var(--coral); font-weight:600;">🙋 মানুষের অপেক্ষায়: ${escHtml(c.needsHumanReason||'')} <span style="text-decoration:underline; cursor:pointer;" onclick="markHandled('${c.id}')">দেখেছি ✓</span></div>` : ''}
         ${link ? `<a href="${link}" target="_blank" style="font-size:11px; color:var(--teal); font-weight:600; text-decoration:none;">${linkLabel}-এ চ্যাট খুলুন →</a>` : ''}
       </div>
       <div class="cust-toggle ${c.ai?'live':''}" onclick="toggleAi('${c.id}')">
@@ -1503,6 +1695,7 @@ async function loadSummary(){
     document.getElementById('todayOrders').textContent = s.todayOrders;
     document.getElementById('pendingCount').textContent = s.pendingCount;
     document.getElementById('totalCustomers').textContent = s.totalCustomers;
+    document.getElementById('lowStock').textContent = s.lowStockCount ?? 0;
   }catch(e){ /* সাইলেন্টলি রাখলাম, orders/customers লোড হলে updateDashboardStats() দিয়ে সামঞ্জস্য হবে */ }
 }
 
@@ -1850,6 +2043,7 @@ async function autoConnect(){
 }
 
 autoConnect();
+setInterval(function(){ if(!document.hidden) loadNotifCount(); }, 30000);
 
 </script>
 <script>
