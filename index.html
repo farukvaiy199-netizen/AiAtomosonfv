@@ -352,6 +352,28 @@
   .chat-bubble.user{ background:var(--glass); margin-right:auto; }
   .chat-bubble.assistant{ background:var(--teal-soft); color:var(--teal); margin-left:auto; }
   .cust-name-link{ cursor:pointer; text-decoration:underline; text-decoration-color:var(--ink-faint); }
+
+  /* ---- পেশাদার লুক: ছোট ছোট উন্নতি ---- */
+  :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+  .card{transition:border-color .2s ease, transform .15s ease;}
+  .row-card:active{transform:scale(.995);}
+  .btn,.connect-btn,.chip,.navbtn,.cust-toggle{transition:transform .12s ease, background .2s ease, color .2s ease, border-color .2s ease;}
+  .btn:disabled,.connect-btn:disabled{opacity:.6; cursor:not-allowed;}
+  ::-webkit-scrollbar{width:6px; height:6px;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14); border-radius:6px;}
+  .topbar{padding-top:calc(20px + env(safe-area-inset-top));}
+  .page-title{letter-spacing:.2px;}
+  .section-head h2{position:relative; padding-left:10px;}
+  .section-head h2::before{content:''; position:absolute; left:0; top:4px; bottom:4px; width:3px; border-radius:3px; background:var(--teal);}
+  .settings-group.sg-head{cursor:pointer; display:flex; align-items:center; justify-content:space-between; text-transform:none; letter-spacing:0; font-size:13px; font-weight:600; color:var(--ink); padding:12px 14px; margin:10px 0 8px; background:var(--glass); border:1px solid var(--glass-brd); border-radius:12px;}
+  .sg-head .sg-chev{transition:transform .2s ease; color:var(--ink-dim);}
+  .sg-head.collapsed .sg-chev{transform:rotate(-90deg);}
+  .sg-body.collapsed{display:none;}
+  .more-item{cursor:pointer;}
+  .more-item:active{background:var(--teal-soft);}
+  textarea.token-input{width:100%; resize:vertical; font-family:inherit; line-height:1.55;}
+  @media (min-width:700px){ .app{border-left:1px solid var(--glass-brd); border-right:1px solid var(--glass-brd); box-shadow:0 0 70px rgba(0,0,0,0.45);} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
 </style>
 </head>
 <body>
@@ -380,7 +402,7 @@
 
     <!-- ================= DASHBOARD ================= -->
     <section id="dashboard" class="active">
-      <h1 class="page-title">শুভ সকাল, ফারুক 👋</h1>
+      <h1 class="page-title" id="greeting">শুভ সকাল, ফারুক 👋</h1>
       <p class="page-sub">আজকের ব্যবসার সারসংক্ষেপ দেখুন</p>
 
       <div id="lockedNoteDashboard"></div>
@@ -391,10 +413,10 @@
             <div class="label">আজকের রেভিনিউ</div>
             <div class="value num">৳ <span id="todayRevenue">০</span></div>
           </div>
-          <div class="pill">▲ ১২.৪%</div>
+          <div class="pill" id="revPill">আজ</div>
         </div>
         <svg class="spark" viewBox="0 0 300 44" preserveAspectRatio="none">
-          <polyline points="0,34 30,30 60,32 90,22 120,26 150,14 180,18 210,10 240,16 270,6 300,10"
+          <polyline id="sparkLine" points="0,40 300,40"
             fill="none" stroke="#18b89b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
@@ -406,7 +428,7 @@
           </div>
           <div class="label">আজকের অর্ডার</div>
           <div class="value num" id="todayOrders">০</div>
-          <div class="delta">▲ ৪টি নতুন</div>
+          <div class="delta" id="todayOrdersDelta">&nbsp;</div>
         </div>
         <div class="card stat">
           <div class="icon" style="background:var(--gold-soft)">
@@ -422,7 +444,7 @@
           </div>
           <div class="label">মোট কাস্টমার</div>
           <div class="value num" id="totalCustomers">০</div>
-          <div class="delta" style="color:var(--violet)">▲ ৯ এই সপ্তাহে</div>
+          <div class="delta" style="color:var(--violet)" id="custDelta">&nbsp;</div>
         </div>
         <div class="card stat">
           <div class="icon" style="background:var(--coral-soft)">
@@ -544,6 +566,54 @@
       <div id="aiImagesList" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
     </section>
 
+    <!-- ================= ফেসবুক পোস্ট (নতুন) ================= -->
+    <section id="posts">
+      <h1 class="page-title">ফেসবুক পোস্ট</h1>
+      <p class="page-sub">AI খসড়া বানাবে, আপনি দেখে সময় ঠিক করে নিশ্চিত করবেন</p>
+
+      <div class="card conn-card">
+        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">আপনার নোট: আসন্ন উপলক্ষ, অফার, কিসে জোর দেবেন</div>
+        <textarea id="postNotes" class="token-input" rows="2" placeholder="যেমন: শীত শুরু হচ্ছে, খেজুরের রসের মৌসুম; ঈদে নতুন প্যাকেজ আসছে"></textarea>
+        <button class="connect-btn off" style="margin-top:8px;" onclick="savePostNotes()">নোট সেভ করুন</button>
+      </div>
+
+      <div class="card conn-card">
+        <input type="text" id="postHint" class="token-input" placeholder="কোন প্রোডাক্ট বা থিম? (ফাঁকা রাখলে AI নিজে বেছে নেবে)" style="margin-bottom:8px;">
+        <button class="btn btn-primary" id="postGenBtn" style="margin-top:0;" onclick="generatePostDraft()">✨ নতুন খসড়া বানান</button>
+        <div class="hint">AI আপনার বিক্রি, স্টক, শিটের দাম, নোট ও নির্দেশনা দেখে খসড়া বানায়। প্রোডাক্টের ছবি আগে AI ট্যাবে আপলোড করা থাকলে সেটাই ডিজাইনে বসে।</div>
+      </div>
+
+      <div class="card conn-card" id="postEditor" style="display:none;">
+        <div class="hint" id="postReason" style="margin:0 0 10px; color:var(--teal); font-weight:600;"></div>
+        <canvas id="postCanvas" style="width:100%; border-radius:14px; display:block; background:#04211c;"></canvas>
+        <div class="filter-chips" style="margin-top:10px;">
+          <div class="chip active" data-t="1" onclick="setPostTemplate(1)">ডিজাইন ১</div>
+          <div class="chip" data-t="2" onclick="setPostTemplate(2)">ডিজাইন ২</div>
+          <div class="chip" data-t="3" onclick="setPostTemplate(3)">ডিজাইন ৩</div>
+          <label class="chip" style="cursor:pointer;">📷 নিজের ছবি<input type="file" accept="image/*" style="display:none;" onchange="pickPostImage(event)"></label>
+        </div>
+        <input type="text" id="postHeadline" class="token-input" placeholder="ছবির শিরোনাম" oninput="renderPostCanvas()" style="margin-bottom:8px;">
+        <input type="text" id="postSubline" class="token-input" placeholder="ছোট লাইন" oninput="renderPostCanvas()" style="margin-bottom:8px;">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-dim); white-space:nowrap;"><input type="checkbox" id="postShowPrice" onchange="renderPostCanvas()" style="accent-color:var(--teal);"> দাম দেখান</label>
+          <input type="text" id="postPrice" class="token-input" placeholder="যেমন ৳১০০০" oninput="renderPostCanvas()" style="margin:0;">
+        </div>
+        <div class="l" style="margin:6px 0; font-size:12px; color:var(--ink-dim);">ক্যাপশন (বদলাতে পারবেন)</div>
+        <textarea id="postCaption" class="token-input" rows="7"></textarea>
+        <div class="l" style="margin:12px 0 6px; font-size:12px; color:var(--ink-dim);">কখন পোস্ট হবে</div>
+        <div style="display:flex; gap:14px; margin-bottom:8px; font-size:13px;">
+          <label style="display:flex; align-items:center; gap:6px;"><input type="radio" name="postWhen" value="later" checked onchange="togglePostWhen()" style="accent-color:var(--teal);"> সময় ঠিক করব</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="radio" name="postWhen" value="now" onchange="togglePostWhen()" style="accent-color:var(--teal);"> এখনই</label>
+        </div>
+        <input type="datetime-local" id="postWhenInput" class="token-input">
+        <div class="hint">নির্ধারিত সময়ে ফেসবুক নিজেই পোস্ট করবে — তখন অ্যাপ বা সার্ভার জেগে থাকা লাগবে না। সময় এখন থেকে কমপক্ষে ১১ মিনিট ও সর্বোচ্চ ২৯ দিনের মধ্যে হতে হবে।</div>
+        <button class="btn btn-primary" id="postConfirmBtn" onclick="confirmPost()">✅ নিশ্চিত করুন</button>
+      </div>
+
+      <div class="section-head"><h2>পোস্টের তালিকা</h2></div>
+      <div id="postsList"></div>
+    </section>
+
     <!-- ================= EMAIL LOG (নতুন) ================= -->
     <section id="emaillog">
       <h1 class="page-title">ইমেইল কনফার্মেশন লগ</h1>
@@ -642,44 +712,8 @@
         <div class="hint">এটা এখন অ্যাপ থেকে বসাতে হয় না — Render Dashboard → Environment-এ <b>SHEET_SCRIPT_URL</b> ও <b>SHEET_SCRIPT_TOKEN</b> নামে দুটো ভ্যারিয়েবল যোগ করলেই সব সেটিংস (AI Key, Facebook Token সহ) স্থায়ীভাবে এই Google Sheet-এ সেভ থাকবে — সার্ভার রিডিপ্লয় হলেও আর হারাবে না।</div>
       </div>
 
-      <div class="settings-group">AI ইঞ্জিন</div>
-      <div class="card conn-card">
-        <div class="conn-top">
-          <div>
-            <div class="l">AI API Key</div>
-            <div class="r" id="aiStatusText">সংযুক্ত নয়</div>
-          </div>
-          <button class="connect-btn off" id="aiBtn" onclick="toggleConnect('ai')">Connect</button>
-        </div>
-        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">প্রোভাইডার বেছে নিন</div>
-        <select id="aiProvider" class="status-select" style="width:100%; margin-bottom:8px; padding:9px 11px;">
-          <option value="groq">Groq (Llama)</option>
-          <option value="openai">OpenAI (ChatGPT)</option>
-          <option value="openrouter">OpenRouter</option>
-          <option value="gemini">Google Gemini</option>
-        </select>
-        <input type="password" id="aiKey" class="token-input" placeholder="উপরে বাছাই করা প্রোভাইডারের API Key পেস্ট করুন">
-        <div class="hint">এই কী দিয়ে AI কাস্টমারের মেসেজের উত্তর দেবে। প্রোভাইডার পাল্টালে সেই প্রোভাইডারের নিজস্ব কী বসাতে হবে — Groq আর OpenAI-এর কী একে অপরের জায়গায় কাজ করে না।</div>
-      </div>
-
-      <div class="card conn-card">
-        <div class="conn-top">
-          <div>
-            <div class="l">AI API Key (ব্যাকআপ)</div>
-            <div class="r" id="ai2StatusText">সংযুক্ত নয়</div>
-          </div>
-          <button class="connect-btn off" id="ai2Btn" onclick="toggleConnect('ai2')">Connect</button>
-        </div>
-        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">প্রোভাইডার বেছে নিন</div>
-        <select id="aiProvider2" class="status-select" style="width:100%; margin-bottom:8px; padding:9px 11px;">
-          <option value="groq">Groq (Llama)</option>
-          <option value="openai">OpenAI (ChatGPT)</option>
-          <option value="openrouter">OpenRouter</option>
-          <option value="gemini">Google Gemini</option>
-        </select>
-        <input type="password" id="aiKey2" class="token-input" placeholder="ব্যাকআপ প্রোভাইডারের API Key পেস্ট করুন">
-        <div class="hint">প্রধান AI Key কোটা/রেট-লিমিটে আটকে গেলে স্বয়ংক্রিয়ভাবে এই ব্যাকআপ Key দিয়ে চেষ্টা করা হবে। ছবি দেখে প্রোডাক্ট বলা বা ভয়েস মেসেজ শোনার জন্যও অন্তত একটা (প্রধান বা ব্যাকআপ) Groq/OpenAI/Gemini Key থাকা দরকার।</div>
-      </div>
+      <div class="settings-group">AI ইঞ্জিন (তিনটা পর্যন্ত Key)</div>
+      <div id="aiSlots"></div>
 
       <div class="settings-group">🔗 আপনার Webhook লিংক (Bazaar Admin-এ বসান)</div>
       <div class="card conn-card">
@@ -749,31 +783,27 @@
   <nav class="bottomnav">
     <button class="navbtn active" data-tab="dashboard" onclick="showTab('dashboard')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-      Dashboard
+      হোম
     </button>
     <button class="navbtn" data-tab="orders" onclick="showTab('orders')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-      Orders
+      অর্ডার
     </button>
     <button class="navbtn" data-tab="customers" onclick="showTab('customers')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Customers
-    </button>
-    <button class="navbtn" data-tab="broadcast" onclick="showTab('broadcast')">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9-9"/><path d="M4 11a5 5 0 0 1 5-5"/><circle cx="4" cy="16" r="2"/><path d="M4 18v3"/><path d="M13 2c5 0 9 4 9 9"/></svg>
-      Broadcast
+      কাস্টমার
     </button>
     <button class="navbtn" data-tab="aitrain" onclick="showTab('aitrain')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
       AI
     </button>
-    <button class="navbtn" data-tab="emaillog" onclick="showTab('emaillog')">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
-      ইমেইল
+    <button class="navbtn" data-tab="posts" onclick="showTab('posts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+      পোস্ট
     </button>
-    <button class="navbtn" data-tab="settings" onclick="showTab('settings')">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-      Settings
+    <button class="navbtn" data-tab="more" onclick="openMore()">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+      আরও
     </button>
   </nav>
 
@@ -792,6 +822,17 @@
       <div class="login-err" id="loginErr"></div>
       <button class="btn btn-primary" style="margin-top:2px;" onclick="doLogin()">লগইন করুন</button>
       <button class="btn btn-ghost" onclick="closeLoginOverlay()">ডিজাইন শুধু দেখুন (লগইন ছাড়া)</button>
+    </div>
+  </div>
+
+  <!-- ================= আরও মেনু (নতুন) ================= -->
+  <div class="profile-overlay hidden" id="moreOverlay" onclick="if(event.target===this) closeMore()">
+    <div class="profile-sheet">
+      <span class="close-x" onclick="closeMore()">✕</span>
+      <h1 class="page-title" style="margin-top:0;">আরও</h1>
+      <div class="card row-card more-item" onclick="goMore('broadcast')"><div class="row-avatar">📣</div><div class="row-main"><div class="t1">ব্রডকাস্ট</div><div class="t2">সব কাস্টমারকে একসাথে মেসেজ</div></div></div>
+      <div class="card row-card more-item" onclick="goMore('emaillog')"><div class="row-avatar">✉️</div><div class="row-main"><div class="t1">ইমেইল লগ</div><div class="t2">কনফার্মেশন ইমেইলের হিস্টোরি</div></div></div>
+      <div class="card row-card more-item" onclick="goMore('settings')"><div class="row-avatar">⚙️</div><div class="row-main"><div class="t1">সেটিংস</div><div class="t2">সংযোগ, AI Key, ব্যবসার তথ্য</div></div></div>
     </div>
   </div>
 
@@ -1450,13 +1491,18 @@ async function loadEmailLogs(){
 }
 
 /* ---------------- Tab switching ---------------- */
+const MORE_TABS = ['broadcast', 'emaillog', 'settings'];
 function showTab(tab){
   document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
-  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab || (b.dataset.tab==='more' && MORE_TABS.includes(tab))));
   window.scrollTo({top:0, behavior:'instant'});
   if(tab==='aitrain'){ loadAiUsage(); loadAiRules(); loadAiImages(); }
+  if(tab==='posts'){ loadPosts(); }
 }
+function openMore(){ document.getElementById('moreOverlay').classList.remove('hidden'); }
+function closeMore(){ document.getElementById('moreOverlay').classList.add('hidden'); }
+function goMore(tab){ closeMore(); showTab(tab); }
 
 /* ---------------- Toast ---------------- */
 let toastTimer;
@@ -1696,24 +1742,403 @@ async function loadSummary(){
     document.getElementById('pendingCount').textContent = s.pendingCount;
     document.getElementById('totalCustomers').textContent = s.totalCustomers;
     document.getElementById('lowStock').textContent = s.lowStockCount ?? 0;
+    renderTrend(s);
   }catch(e){ /* সাইলেন্টলি রাখলাম, orders/customers লোড হলে updateDashboardStats() দিয়ে সামঞ্জস্য হবে */ }
 }
 
 function updateDashboardStats(){
   if(!apiConnected() || !isLoggedIn()) return;
-  document.getElementById('todayOrders').textContent = orders.length;
+  const bdDay = d => new Date(d).toLocaleDateString('en-CA', { timeZone:'Asia/Dhaka' });
+  const todayStr = bdDay(Date.now());
+  document.getElementById('todayOrders').textContent = orders.filter(o => bdDay(o.createdAt) === todayStr).length;
+  const d1 = document.getElementById('todayOrdersDelta'); if(d1) d1.textContent = 'মোট ' + orders.length + 'টি অর্ডার';
+  const waiting = customers.filter(c => c.needsHuman).length;
+  const d2 = document.getElementById('custDelta'); if(d2) d2.textContent = waiting ? ('🙋 ' + waiting + ' জন অপেক্ষায়') : '';
   document.getElementById('pendingCount').textContent = orders.filter(o=>o.status==='Pending').length;
   document.getElementById('totalCustomers').textContent = customers.length;
   document.getElementById('bcastRecipientCount').textContent = customers.length + ' জন';
 }
+
+/* ================= AI Key-র ঘর (তিনটা), যেকোনো AI ================= */
+const AI_PROVIDERS = [
+  ['groq','Groq (Llama)'], ['openai','OpenAI (ChatGPT)'], ['gemini','Google Gemini'], ['openrouter','OpenRouter'],
+  ['deepseek','DeepSeek'], ['mistral','Mistral'], ['custom','অন্য যেকোনো AI (OpenAI-সামঞ্জস্যপূর্ণ)']
+];
+const AI_DEFAULT_MODEL = {
+  groq:'llama-3.3-70b-versatile', openai:'gpt-4o-mini', gemini:'gemini-2.0-flash', openrouter:'openai/gpt-4o-mini',
+  deepseek:'deepseek-chat', mistral:'mistral-small-latest', custom:'মডেলের নাম লিখুন (বাধ্যতামূলক)'
+};
+const AI_SLOT_DEFS = [
+  { type:'ai',  sfx:'',  title:'প্রধান AI' },
+  { type:'ai2', sfx:'2', title:'ব্যাকআপ AI ১' },
+  { type:'ai3', sfx:'3', title:'ব্যাকআপ AI ২' }
+];
+
+function renderAiSlots(){
+  const box = document.getElementById('aiSlots');
+  if(!box) return;
+  box.innerHTML = AI_SLOT_DEFS.map(d => `
+    <div class="card conn-card">
+      <div class="conn-top">
+        <div><div class="l">${d.title}</div><div class="r" id="${d.type}StatusText">সংযুক্ত নয়</div></div>
+        <button class="connect-btn off" id="${d.type}Btn" onclick="toggleConnect('${d.type}')">Connect</button>
+      </div>
+      <select id="aiProvider${d.sfx}" class="status-select" onchange="onAiProviderChange('${d.sfx}')" style="width:100%; margin-bottom:8px; padding:9px 11px;">
+        ${AI_PROVIDERS.map(p => `<option value="${p[0]}">${p[1]}</option>`).join('')}
+      </select>
+      <input type="password" id="aiKey${d.sfx}" class="token-input" placeholder="API Key পেস্ট করুন" style="margin-bottom:8px;">
+      <input type="text" id="aiModel${d.sfx}" class="token-input" placeholder="মডেলের নাম (ঐচ্ছিক)" style="margin-bottom:8px;">
+      <input type="text" id="aiBaseUrl${d.sfx}" class="token-input" placeholder="Base URL, যেমন https://api.example.com/v1" style="display:none; margin-bottom:8px;">
+      <div class="hint" id="aiHint${d.sfx}"></div>
+    </div>`).join('') +
+    '<div class="hint" style="margin:-2px 2px 8px;">প্রধান Key কোটা বা এররে আটকালে স্বয়ংক্রিয়ভাবে পরের ঘরের Key দিয়ে চেষ্টা হয়। ছবি দেখা ও ভয়েস শোনার জন্য অন্তত একটা Groq/OpenAI/Gemini Key থাকা দরকার।</div>';
+  AI_SLOT_DEFS.forEach(d => onAiProviderChange(d.sfx));
+}
+
+function onAiProviderChange(sfx){
+  const sel = document.getElementById('aiProvider' + sfx);
+  if(!sel) return;
+  const p = sel.value;
+  const base = document.getElementById('aiBaseUrl' + sfx);
+  const model = document.getElementById('aiModel' + sfx);
+  const hint = document.getElementById('aiHint' + sfx);
+  if(base) base.style.display = (p === 'custom') ? 'block' : 'none';
+  if(model) model.placeholder = (p === 'custom') ? AI_DEFAULT_MODEL.custom : ('মডেলের নাম (ঐচ্ছিক, ডিফল্ট: ' + (AI_DEFAULT_MODEL[p] || '') + ')');
+  if(hint) hint.textContent = (p === 'custom')
+    ? 'যেকোনো AI যার API OpenAI-র মতো (chat/completions), যেমন Together, Fireworks, Cerebras, নিজের সার্ভার। Base URL আর মডেলের নাম ওই সার্ভিসের ডকুমেন্টেশনে পাবেন।'
+    : 'মডেল ফাঁকা রাখলে ডিফল্ট ব্যবহার হবে। কোনো মডেল বন্ধ হয়ে গেলে এখানে নতুন মডেলের নাম বসান। প্রোভাইডার পাল্টালে সেই প্রোভাইডারেরই Key বসাতে হবে।';
+}
+
+/* ================= সেটিংস: ভাঁজ করা সেকশন ================= */
+function makeSettingsCollapsible(){
+  const sec = document.getElementById('settings');
+  if(!sec) return;
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem('sb_sg') || '{}'); }catch(e){}
+  Array.from(sec.querySelectorAll(':scope > .settings-group')).forEach((g, idx) => {
+    const key = g.textContent.trim();
+    const body = document.createElement('div');
+    body.className = 'sg-body';
+    const nodes = [];
+    let n = g.nextElementSibling;
+    while(n && !n.classList.contains('settings-group') && n.getAttribute('onclick') !== 'saveAutomationSettings()'){
+      nodes.push(n); n = n.nextElementSibling;
+    }
+    nodes.forEach(x => body.appendChild(x));
+    g.after(body);
+    g.innerHTML = '<span>' + g.innerHTML + '</span><span class="sg-chev">▾</span>';
+    g.classList.add('sg-head');
+    const collapsed = (key in saved) ? saved[key] : idx !== 0;
+    g.classList.toggle('collapsed', collapsed);
+    body.classList.toggle('collapsed', collapsed);
+    g.addEventListener('click', () => {
+      const now = !g.classList.contains('collapsed');
+      g.classList.toggle('collapsed', now);
+      body.classList.toggle('collapsed', now);
+      saved[key] = now;
+      try{ localStorage.setItem('sb_sg', JSON.stringify(saved)); }catch(e){}
+    });
+  });
+}
+
+/* ================= হোম: শুভেচ্ছা ও আসল ৭ দিনের গ্রাফ ================= */
+function setGreeting(){
+  const el = document.getElementById('greeting');
+  if(!el) return;
+  const h = new Date().getHours();
+  const g = h < 5 ? 'শুভ রাত্রি' : h < 12 ? 'শুভ সকাল' : h < 16 ? 'শুভ দুপুর' : h < 19 ? 'শুভ বিকেল' : 'শুভ সন্ধ্যা';
+  el.textContent = g + ', ফারুক 👋';
+}
+
+function renderTrend(s){
+  const t = s.trend || [];
+  const line = document.getElementById('sparkLine');
+  if(line && t.length > 1){
+    const max = Math.max.apply(null, t.concat([1]));
+    line.setAttribute('points', t.map((v, i) => Math.round(i * 300 / (t.length - 1)) + ',' + Math.round(40 - (v / max) * 34)).join(' '));
+  }
+  const pill = document.getElementById('revPill');
+  if(pill && t.length >= 2){
+    const y = t[t.length - 2], d = t[t.length - 1];
+    if(y > 0){
+      const pct = Math.round((d - y) / y * 100);
+      pill.textContent = (pct >= 0 ? '▲ ' : '▼ ') + Math.abs(pct) + '% গতকালের তুলনায়';
+      pill.style.background = pct >= 0 ? '' : 'var(--coral-soft)';
+      pill.style.color = pct >= 0 ? '' : 'var(--coral)';
+    } else { pill.textContent = 'আজ'; }
+  }
+}
+
+/* ================= ফেসবুক পোস্ট ================= */
+let postDraft = null, postImageEl = null, postTemplate = 1, postLogoEl = null;
+
+function postVal(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+
+function loadImageEl(url){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('ছবি লোড হয়নি'));
+    img.src = url;
+  });
+}
+
+function toLocalInput(d){
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+async function savePostNotes(){
+  if(!apiConnected() || !isLoggedIn()){ toast('লগইন করুন প্রথমে'); return; }
+  try{
+    await apiFetch('/settings', { method:'POST', body: JSON.stringify({ postNotes: postVal('postNotes').slice(0, 600) }) });
+    toast('নোট সেভ হয়েছে ✓');
+  }catch(e){ toast(e.message); }
+}
+
+function setPostTemplate(t){
+  postTemplate = t;
+  document.querySelectorAll('[data-t]').forEach(c => c.classList.toggle('active', Number(c.dataset.t) === t));
+  renderPostCanvas();
+}
+
+function togglePostWhen(){
+  const later = document.querySelector('input[name=postWhen]:checked').value === 'later';
+  document.getElementById('postWhenInput').style.display = later ? 'block' : 'none';
+}
+
+function pickPostImage(evt){
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => { postImageEl = img; renderPostCanvas(); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function generatePostDraft(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  const btn = document.getElementById('postGenBtn');
+  btn.disabled = true; btn.textContent = 'AI ভাবছে...';
+  try{
+    const r = await apiFetch('/posts/generate', { method:'POST', body: JSON.stringify({ hint: postVal('postHint') }) });
+    const d = r.draft;
+    postDraft = d;
+    postImageEl = null;
+    if(d.imageUrl){
+      try{ postImageEl = await loadImageEl(d.imageUrl + '?c=' + Date.now()); }
+      catch(e){ toast('প্রোডাক্টের ছবি লোড হয়নি — "নিজের ছবি" দিয়ে ছবি বেছে নিন'); }
+    }
+    document.getElementById('postHeadline').value = d.headline || '';
+    document.getElementById('postSubline').value = d.subline || '';
+    document.getElementById('postPrice').value = d.priceText || '';
+    document.getElementById('postShowPrice').checked = !!d.priceText;
+    document.getElementById('postCaption').value = d.caption || '';
+    document.getElementById('postReason').textContent = (d.productName ? '📌 ' + d.productName + ' — ' : '') + (d.reason || '');
+    if(!d.imageId && !postImageEl){
+      document.getElementById('postReason').textContent += ' · এই প্রোডাক্টের ছবি আপলোড করা নেই, "📷 নিজের ছবি" দিয়ে ছবি দিন।';
+    }
+    const t = new Date(Date.now() + 90 * 60000);
+    t.setMinutes(t.getMinutes() < 30 ? 30 : 60, 0, 0);
+    document.getElementById('postWhenInput').value = toLocalInput(t);
+    document.querySelector('input[name=postWhen][value=later]').checked = true;
+    togglePostWhen();
+    document.getElementById('postEditor').style.display = 'block';
+    await renderPostCanvas();
+    document.getElementById('postEditor').scrollIntoView({ behavior:'smooth', block:'start' });
+  }catch(e){
+    alert(e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '✨ নতুন খসড়া বানান';
+  }
+}
+
+function wrapLines(ctx, text, maxW){
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = '';
+  words.forEach(w => {
+    const test = cur ? cur + ' ' + w : w;
+    if(ctx.measureText(test).width > maxW && cur){ lines.push(cur); cur = w; } else { cur = test; }
+  });
+  if(cur) lines.push(cur);
+  return lines;
+}
+
+function drawPill(ctx, text, x, y, fontPx, align){
+  ctx.font = '700 ' + fontPx + 'px "Hind Siliguri","Noto Sans Bengali",sans-serif';
+  const padX = 30, h = fontPx + 26;
+  const w = ctx.measureText(text).width + padX * 2;
+  const left = align === 'right' ? x - w : x;
+  ctx.fillStyle = '#e8b74b';
+  ctx.beginPath();
+  if(ctx.roundRect){ ctx.roundRect(left, y, w, h, h / 2); } else { ctx.rect(left, y, w, h); }
+  ctx.fill();
+  ctx.fillStyle = '#2a1d00';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.fillText(text, left + padX, y + h / 2 + 2);
+}
+
+async function renderPostCanvas(){
+  const c = document.getElementById('postCanvas');
+  if(!c) return;
+  const W = 1080;
+  c.width = W; c.height = W;
+  const ctx = c.getContext('2d');
+  try{
+    await document.fonts.load('700 70px "Hind Siliguri"');
+    await document.fonts.load('500 40px "Hind Siliguri"');
+  }catch(e){}
+  const F = (w, px) => w + ' ' + px + 'px "Hind Siliguri","Noto Sans Bengali",sans-serif';
+
+  const bg = ctx.createLinearGradient(0, 0, W, W);
+  bg.addColorStop(0, '#0b3d36'); bg.addColorStop(1, '#04211c');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, W);
+  if(postImageEl){
+    const r = Math.max(W / postImageEl.width, W / postImageEl.height);
+    const w = postImageEl.width * r, h = postImageEl.height * r;
+    ctx.drawImage(postImageEl, (W - w) / 2, (W - h) / 2, w, h);
+  }
+
+  const headline = postVal('postHeadline').trim();
+  const subline = postVal('postSubline').trim();
+  const price = document.getElementById('postShowPrice').checked ? postVal('postPrice').trim() : '';
+
+  if(postTemplate === 1){
+    const g = ctx.createLinearGradient(0, 520, 0, W);
+    g.addColorStop(0, 'rgba(2,26,23,0)'); g.addColorStop(0.55, 'rgba(2,26,23,0.82)'); g.addColorStop(1, 'rgba(2,26,23,0.96)');
+    ctx.fillStyle = g; ctx.fillRect(0, 520, W, W - 520);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#ffffff';
+    ctx.font = F(700, 84);
+    let y = 820;
+    wrapLines(ctx, headline, W - 200).slice(0, 2).forEach(l => { ctx.fillText(l, 70, y); y += 98; });
+    ctx.font = F(500, 44); ctx.fillStyle = '#9fe6d6';
+    wrapLines(ctx, subline, W - 260).slice(0, 2).forEach(l => { ctx.fillText(l, 70, y); y += 58; });
+    if(price) drawPill(ctx, price, W - 60, 60, 54, 'right');
+  } else if(postTemplate === 2){
+    ctx.fillStyle = 'rgba(2,26,23,0.86)'; ctx.fillRect(0, 700, W, 380);
+    ctx.fillStyle = '#18b89b'; ctx.fillRect(0, 700, W, 10);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#ffffff';
+    ctx.font = F(700, 76);
+    let y = 805;
+    wrapLines(ctx, headline, W - 160).slice(0, 2).forEach(l => { ctx.fillText(l, 70, y); y += 90; });
+    ctx.font = F(500, 42); ctx.fillStyle = '#9fe6d6';
+    wrapLines(ctx, subline, W - 400).slice(0, 2).forEach(l => { ctx.fillText(l, 70, y); y += 54; });
+    if(price) drawPill(ctx, price, W - 60, 960, 54, 'right');
+  } else {
+    const g = ctx.createLinearGradient(0, 0, 0, 460);
+    g.addColorStop(0, 'rgba(2,26,23,0.95)'); g.addColorStop(1, 'rgba(2,26,23,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, 460);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#ffffff';
+    ctx.font = F(700, 82);
+    let y = 150;
+    wrapLines(ctx, headline, W - 160).slice(0, 2).forEach(l => { ctx.fillText(l, W / 2, y); y += 96; });
+    ctx.font = F(500, 42); ctx.fillStyle = '#9fe6d6';
+    wrapLines(ctx, subline, W - 200).slice(0, 2).forEach(l => { ctx.fillText(l, W / 2, y); y += 54; });
+    if(price) drawPill(ctx, price, 60, 940, 58, 'left');
+  }
+
+  // লোগো (নিচের ডান কোণে)
+  try{
+    if(!postLogoEl) postLogoEl = await loadImageEl('icon-192.png');
+    const s = 120, x = W - s - 40, y = W - s - 40;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x + s / 2, y + s / 2, s / 2, 0, Math.PI * 2); ctx.clip();
+    ctx.drawImage(postLogoEl, x, y, s, s);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(x + s / 2, y + s / 2, s / 2, 0, Math.PI * 2); ctx.stroke();
+  }catch(e){}
+}
+
+async function confirmPost(){
+  const caption = postVal('postCaption').trim();
+  if(!caption){ toast('ক্যাপশন লিখুন'); return; }
+  const later = document.querySelector('input[name=postWhen]:checked').value === 'later';
+  let scheduledAt = null;
+  if(later){
+    const v = postVal('postWhenInput');
+    if(!v){ toast('সময় বেছে নিন'); return; }
+    scheduledAt = new Date(v).toISOString();
+  } else if(!confirm('এখনই পেজে পোস্ট করবেন?')){ return; }
+
+  const btn = document.getElementById('postConfirmBtn');
+  btn.disabled = true; btn.textContent = 'পাঠানো হচ্ছে...';
+  try{
+    await renderPostCanvas();
+    const c = document.getElementById('postCanvas');
+    const imageData = c.toDataURL('image/jpeg', 0.86);
+    const tc = document.createElement('canvas'); tc.width = 280; tc.height = 280;
+    tc.getContext('2d').drawImage(c, 0, 0, 280, 280);
+    const thumbData = tc.toDataURL('image/jpeg', 0.7);
+    await apiFetch('/posts', { method:'POST', body: JSON.stringify({
+      caption, imageData, thumbData, scheduledAt, productName: postDraft ? postDraft.productName : ''
+    }) });
+    toast(scheduledAt ? 'শিডিউল হয়েছে ✓ — ফেসবুক ঠিক সময়ে পোস্ট করবে' : 'পেজে পোস্ট হয়েছে ✓');
+    document.getElementById('postEditor').style.display = 'none';
+    loadPosts();
+  }catch(e){
+    alert(e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '✅ নিশ্চিত করুন';
+  }
+}
+
+async function loadPosts(){
+  const wrap = document.getElementById('postsList');
+  if(!wrap) return;
+  if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
+  try{
+    const list = await apiFetch('/posts');
+    if(!list.length){ wrap.innerHTML = '<div class="empty">এখনো কোনো পোস্ট নেই</div>'; return; }
+    wrap.innerHTML = list.map(p => {
+      const when = p.scheduledAt ? new Date(p.scheduledAt).toLocaleString('bn-BD', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+      const badge = p.status === 'scheduled' ? `<span class="badge processing">নির্ধারিত · ${when}</span>`
+        : p.status === 'published' ? '<span class="badge delivered">পোস্ট হয়েছে</span>'
+        : '<span class="badge cancelled">ব্যর্থ</span>';
+      const err = p.status === 'failed' && p.error ? `<div class="t2" style="color:var(--coral); white-space:normal;">${escHtml(p.error)}</div>` : '';
+      return `
+      <div class="card row-card">
+        ${p.thumb ? `<img src="${p.thumb}" style="width:54px; height:54px; border-radius:10px; object-fit:cover; flex-shrink:0;">` : '<div class="row-avatar">📝</div>'}
+        <div class="row-main">
+          <div class="t1">${escHtml(p.productName || 'পোস্ট')}</div>
+          <div class="t2" style="white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escHtml(p.caption)}</div>
+          <div style="margin-top:4px;">${badge}</div>
+          ${err}
+        </div>
+        <button class="connect-btn off" style="background:var(--coral-soft); color:var(--coral); flex-shrink:0;" onclick="deletePost('${p.id}', '${p.status}')">${p.status === 'scheduled' ? 'বাতিল' : 'সরান'}</button>
+      </div>`;
+    }).join('');
+  }catch(e){ wrap.innerHTML = '<div class="empty">পোস্টের তালিকা লোড করা যায়নি</div>'; }
+}
+
+async function deletePost(id, status){
+  const msg = status === 'scheduled' ? 'নির্ধারিত পোস্টটা ফেসবুক থেকে বাতিল করবেন?' : 'তালিকা থেকে সরাবেন? (ফেসবুকে পোস্ট থাকবে)';
+  if(!confirm(msg)) return;
+  try{
+    await apiFetch('/posts/' + id, { method:'DELETE' });
+    toast(status === 'scheduled' ? 'বাতিল হয়েছে' : 'সরানো হয়েছে');
+    loadPosts();
+  }catch(e){ alert(e.message); }
+}
+
 
 /* ---------------- Settings: connect toggles ---------------- */
 const connMeta = {
   fb:    {inputs:['fbToken'],               settingsKey:'fbToken',    label:'Facebook',     empty:'Access Token'},
   wa:    {inputs:['waToken','waPhoneNumberId'], settingsKey:'waToken', label:'WhatsApp',     empty:'Access Token / Phone Number ID'},
   sheet: {inputs:['sheetLink'],             settingsKey:'sheetLink',  label:'Google Sheet', empty:'শিট লিংক'},
-  ai:    {inputs:['aiKey', 'aiProvider'],   settingsKey:'aiKey',      label:'AI API',       empty:'API Key'},
-  ai2:   {inputs:['aiKey2', 'aiProvider2'], settingsKey:'aiKey2',     label:'ব্যাকআপ AI API', empty:'ব্যাকআপ API Key'}
+  ai:    {inputs:['aiKey', 'aiProvider'],   optional:['aiModel','aiBaseUrl'],   keyInput:'aiKey',  sfx:'',  settingsKey:'aiKey',  label:'প্রধান AI',    empty:'API Key'},
+  ai2:   {inputs:['aiKey2', 'aiProvider2'], optional:['aiModel2','aiBaseUrl2'], keyInput:'aiKey2', sfx:'2', settingsKey:'aiKey2', label:'ব্যাকআপ AI ১', empty:'ব্যাকআপ API Key'},
+  ai3:   {inputs:['aiKey3', 'aiProvider3'], optional:['aiModel3','aiBaseUrl3'], keyInput:'aiKey3', sfx:'3', settingsKey:'aiKey3', label:'ব্যাকআপ AI ২', empty:'API Key'}
 };
 
 async function toggleConnect(type){
@@ -1733,7 +2158,7 @@ async function toggleConnect(type){
   }
 
   // নতুন কোনো ইনপুট বক্সে ভ্যালু বসানো আছে কিনা চেক করি
-  const hasNewValue = meta.inputs.some(inp => {
+  const hasNewValue = (meta.keyInput ? [meta.keyInput] : meta.inputs).some(inp => {
     const el = document.getElementById(inp);
     return el && el.value.trim();
   });
@@ -1745,7 +2170,7 @@ async function toggleConnect(type){
     if(!confirmDisconnect) return;
 
     const payload = {};
-    meta.inputs.forEach(inp => payload[inp] = '');
+    meta.inputs.concat(meta.optional || []).forEach(inp => payload[inp] = '');
     try{
       await apiFetch('/settings', { method:'POST', body: JSON.stringify(payload) });
     }catch(e){ toast(e.message); return; }
@@ -1767,6 +2192,16 @@ async function toggleConnect(type){
     if(missing){
       toast('আগে ' + meta.empty + ' লিখুন');
       return;
+    }
+    (meta.optional || []).forEach(inp => {
+      const el = document.getElementById(inp);
+      values[inp] = el ? el.value.trim() : '';
+    });
+    if(meta.sfx !== undefined && values['aiProvider' + meta.sfx] === 'custom'){
+      if(!values['aiBaseUrl' + meta.sfx] || !values['aiModel' + meta.sfx]){
+        toast('কাস্টম AI-র জন্য Base URL ও মডেলের নাম দুটোই লিখুন');
+        return;
+      }
     }
     let result;
     try{
@@ -1792,7 +2227,7 @@ async function loadSettingsStatus(){
   if(!apiConnected() || !isLoggedIn()) return;
   try{
     const s = await apiFetch('/settings');
-    ['fb','wa','sheet','ai','ai2'].forEach(type=>{
+    ['fb','wa','sheet','ai','ai2','ai3'].forEach(type=>{
       const on = s.connected && s.connected[type];
       const btn = document.getElementById(type+'Btn');
       const txt = document.getElementById(type+'StatusText');
@@ -1816,8 +2251,14 @@ async function loadSettingsStatus(){
       storageEl.textContent = s.sheetStorageConfigured ? '● স্থায়ীভাবে সংযুক্ত আছে' : '● এখনো Render-এ Environment ভ্যারিয়েবল বসানো হয়নি';
       storageEl.style.color = s.sheetStorageConfigured ? 'var(--teal)' : 'var(--coral)';
     }
-    if(s.aiProvider) document.getElementById('aiProvider').value = s.aiProvider;
-    if(s.aiProvider2) document.getElementById('aiProvider2').value = s.aiProvider2;
+    ['', '2', '3'].forEach(sfx => {
+      const pe = document.getElementById('aiProvider' + sfx);
+      if(pe && s['aiProvider' + sfx]) pe.value = s['aiProvider' + sfx];
+      const me = document.getElementById('aiModel' + sfx); if(me) me.value = s['aiModel' + sfx] || '';
+      const be = document.getElementById('aiBaseUrl' + sfx); if(be) be.value = s['aiBaseUrl' + sfx] || '';
+      onAiProviderChange(sfx);
+    });
+    const pn = document.getElementById('postNotes'); if(pn && s.postNotes !== undefined) pn.value = s.postNotes || '';
     if(s.fbAppId) document.getElementById('fbAppId').value = s.fbAppId;
     if(s.waConfigId) document.getElementById('waConfigId').value = s.waConfigId;
     if(s.waAppId) document.getElementById('waAppId').value = s.waAppId;
@@ -1903,7 +2344,7 @@ function autoConnectFacebook(){
     } else {
       toast('Facebook লগইন বাতিল করা হয়েছে');
     }
-  }, { scope: 'pages_show_list,pages_manage_metadata,pages_messaging,pages_read_engagement' });
+  }, { scope: 'pages_show_list,pages_manage_metadata,pages_messaging,pages_read_engagement,pages_manage_posts' });
 }
 
 function fetchPagesAndConnect(userToken){
@@ -2042,6 +2483,9 @@ async function autoConnect(){
   updateSystemStatus();
 }
 
+renderAiSlots();
+makeSettingsCollapsible();
+setGreeting();
 autoConnect();
 setInterval(function(){ if(!document.hidden) loadNotifCount(); }, 30000);
 
