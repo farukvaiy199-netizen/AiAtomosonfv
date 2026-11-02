@@ -572,6 +572,14 @@
       <p class="page-sub">AI খসড়া বানাবে, আপনি দেখে সময় ঠিক করে নিশ্চিত করবেন</p>
 
       <div class="card conn-card">
+        <div class="conn-top" style="margin-bottom:6px;">
+          <div><div class="l">পেজে পোস্ট করার অনুমতি</div><div class="r">পোস্ট করতে এটা একবার দিতে হবে</div></div>
+          <button class="connect-btn off" onclick="autoConnectFacebookForPosts()">অনুমতি দিন</button>
+        </div>
+        <div class="hint">আগে Meta Developers-এ অ্যাপের Use cases → Manage Pages → Customize থেকে <b>pages_manage_posts</b>-এর পাশে "Add" চাপা থাকতে হবে। না থাকলে "Invalid Scopes" এরর আসবে। এই বাটন আলাদা, তাই এতে সমস্যা হলেও Messenger/WhatsApp-এর সাধারণ Facebook সংযোগ নষ্ট হয় না।</div>
+      </div>
+
+      <div class="card conn-card">
         <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">আপনার নোট: আসন্ন উপলক্ষ, অফার, কিসে জোর দেবেন</div>
         <textarea id="postNotes" class="token-input" rows="2" placeholder="যেমন: শীত শুরু হচ্ছে, খেজুরের রসের মৌসুম; ঈদে নতুন প্যাকেজ আসছে"></textarea>
         <button class="connect-btn off" style="margin-top:8px;" onclick="savePostNotes()">নোট সেভ করুন</button>
@@ -2386,7 +2394,7 @@ function ensureFbInit(){
   return true;
 }
 
-function autoConnectFacebook(){
+function autoConnectFacebook(withPosting){
   if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
   if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
   if(!ensureFbInit()) return;
@@ -2397,8 +2405,12 @@ function autoConnectFacebook(){
     } else {
       toast('Facebook লগইন বাতিল করা হয়েছে');
     }
-  }, { scope: 'pages_show_list,pages_manage_metadata,pages_messaging,pages_read_engagement,pages_manage_posts' });
+  }, withPosting === true
+    ? { scope: 'pages_show_list,pages_manage_metadata,pages_messaging,pages_read_engagement,pages_manage_posts', auth_type: 'rerequest' }
+    : { scope: 'pages_show_list,pages_manage_metadata,pages_messaging,pages_read_engagement' });
 }
+
+function autoConnectFacebookForPosts(){ autoConnectFacebook(true); }
 
 function fetchPagesAndConnect(userToken){
   FB.api('/me/accounts', { access_token: userToken }, async function(res){
