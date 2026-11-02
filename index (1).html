@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Faruk's SmartBiz — Admin Dashboard</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0e16">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#0a0e16;
+    --bg-1:#0e1420;
+    --glass:rgba(255,255,255,0.045);
+    --glass-brd:rgba(255,255,255,0.09);
+    --glass-brd-hi:rgba(255,255,255,0.16);
+    --ink:#eef1f6;
+    --ink-dim:#9aa4b6;
+    --ink-faint:#5f6b81;
+    --teal:#18b89b;
+    --teal-soft:rgba(24,184,155,0.16);
+    --gold:#e8b74b;
+    --gold-soft:rgba(232,183,75,0.15);
+    --coral:#f05d5e;
+    --coral-soft:rgba(240,93,94,0.15);
+    --violet:#8b7ef0;
+    --radius:18px;
+    --radius-sm:12px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    font-family:'Hind Siliguri','Space Grotesk',sans-serif;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(24,184,155,0.10), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(139,126,240,0.10), transparent 55%),
+      linear-gradient(180deg,var(--bg-0),var(--bg-1) 40%, var(--bg-0));
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  .num{font-family:'Space Grotesk',sans-serif;}
+  ::selection{background:var(--teal-soft);}
+  .app{
+    width:100%;
+    max-width:460px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent 200px);
+  }
+
+  /* ---- Topbar ---- */
+  .topbar{
+    padding:20px 18px 10px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .brand{display:flex; align-items:center; gap:11px;}
+  .brand-mark{
+    width:42px; height:42px; border-radius:13px;
+    background:linear-gradient(135deg,var(--teal),#0e7d6a);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk'; font-weight:700; font-size:17px; color:#04211c;
+    box-shadow:0 6px 18px -6px rgba(24,184,155,0.55);
+    flex-shrink:0;
+  }
+  .brand-logo{width:44px; height:44px; border-radius:12px; object-fit:cover; flex-shrink:0; box-shadow:0 6px 18px -6px rgba(24,184,155,0.55);}
+  .brand-text .name{font-weight:700; font-size:15.5px; letter-spacing:.1px;}
+  .brand-text .sub{font-size:11.5px; color:var(--ink-dim); margin-top:1px; display:flex; align-items:center; gap:6px;}
+  .pulse-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--teal);
+    box-shadow:0 0 0 0 rgba(24,184,155,0.6);
+    animation:pulse 2.2s infinite;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(24,184,155,0.55);}
+    70%{box-shadow:0 0 0 7px rgba(24,184,155,0);}
+    100%{box-shadow:0 0 0 0 rgba(24,184,155,0);}
+  }
+  .bell{
+    width:38px; height:38px; border-radius:12px;
+    background:var(--glass); border:1px solid var(--glass-brd);
+    display:flex; align-items:center; justify-content:center; position:relative; cursor:pointer;
+  }
+  .bell-count{
+    position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:9px;
+    background:var(--coral); color:#fff; font-size:10px; font-weight:700; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; box-shadow:0 0 0 2px var(--bg-1);
+  }
+  .topbar-actions{display:flex; align-items:center; gap:8px;}
+  .auth-btn{
+    width:38px; height:38px; border-radius:12px;
+    background:var(--glass); border:1px solid var(--glass-brd);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-dim);
+  }
+  .auth-btn.locked{color:var(--gold); border-color:rgba(232,183,75,0.35);}
+  .auth-btn.unlocked{color:var(--teal); border-color:rgba(24,184,155,0.35);}
+
+  main{flex:1; padding:6px 18px 100px;}
+  section{display:none; animation:fade .35s ease;}
+  section.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  h1.page-title{font-size:19px; font-weight:700; margin:14px 0 4px;}
+  p.page-sub{font-size:12.5px; color:var(--ink-dim); margin:0 0 16px;}
+
+  /* ---- Glass card base ---- */
+  .card{
+    background:var(--glass);
+    border:1px solid var(--glass-brd);
+    border-radius:var(--radius);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+  }
+
+  /* ---- Analytics grid ---- */
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
+  .stat{
+    padding:14px 14px 13px;
+    position:relative;
+    overflow:hidden;
+  }
+  .stat .icon{
+    width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    margin-bottom:10px;
+  }
+  .stat .label{font-size:11.5px; color:var(--ink-dim); font-weight:500;}
+  .stat .value{font-size:21px; font-weight:700; margin-top:3px; font-family:'Space Grotesk';}
+  .stat .delta{font-size:10.5px; margin-top:4px; color:var(--teal); font-weight:600;}
+  .stat.wide{grid-column:span 2; display:flex; align-items:center; justify-content:space-between;}
+
+  .revenue-card{
+    padding:18px; margin-bottom:10px;
+    background:linear-gradient(160deg, rgba(24,184,155,0.14), rgba(24,184,155,0.02));
+    border:1px solid rgba(24,184,155,0.22);
+  }
+  .revenue-card .top{display:flex; justify-content:space-between; align-items:flex-start;}
+  .revenue-card .label{font-size:12px; color:var(--ink-dim);}
+  .revenue-card .value{font-size:29px; font-weight:700; font-family:'Space Grotesk'; margin-top:4px;}
+  .revenue-card .pill{
+    font-size:11px; font-weight:600; padding:4px 9px; border-radius:20px;
+    background:var(--teal-soft); color:var(--teal);
+  }
+  .spark{width:100%; height:44px; margin-top:12px;}
+
+  .section-head{display:flex; align-items:center; justify-content:space-between; margin:20px 0 10px;}
+  .section-head h2{font-size:14.5px; font-weight:700; margin:0;}
+  .section-head a{font-size:11.5px; color:var(--teal); font-weight:600; text-decoration:none;}
+
+  /* ---- Lists ---- */
+  .row-card{
+    padding:13px 14px; margin-bottom:9px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .row-avatar{
+    width:40px; height:40px; border-radius:11px; flex-shrink:0;
+    background:linear-gradient(135deg, rgba(139,126,240,0.35), rgba(24,184,155,0.25));
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;
+  }
+  .row-main{flex:1; min-width:0;}
+  .row-main .t1{font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .row-main .t2{font-size:11.5px; color:var(--ink-dim); margin-top:2px;}
+  .row-end{text-align:right; flex-shrink:0;}
+  .row-end .amt{font-size:13.5px; font-weight:700; font-family:'Space Grotesk';}
+  .badge{
+    font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; margin-top:4px; display:inline-block;
+  }
+  .badge.pending{background:var(--gold-soft); color:var(--gold);}
+  .badge.processing{background:rgba(139,126,240,0.16); color:var(--violet);}
+  .badge.delivered{background:var(--teal-soft); color:var(--teal);}
+  .badge.cancelled{background:var(--coral-soft); color:var(--coral);}
+
+  /* ---- Search / filter ---- */
+  .search-wrap{display:flex; gap:8px; margin-bottom:12px;}
+  .search-box{
+    flex:1; background:var(--glass); border:1px solid var(--glass-brd); border-radius:12px;
+    padding:10px 13px; display:flex; align-items:center; gap:8px;
+  }
+  .search-box input{
+    background:none; border:none; outline:none; color:var(--ink); font-size:13px; width:100%;
+    font-family:inherit;
+  }
+  .search-box input::placeholder{color:var(--ink-faint);}
+  .filter-chips{display:flex; gap:7px; overflow-x:auto; margin-bottom:14px; padding-bottom:2px;}
+  .filter-chips::-webkit-scrollbar{display:none;}
+  .chip{
+    flex-shrink:0; font-size:11.5px; font-weight:600; padding:7px 13px; border-radius:20px;
+    background:var(--glass); border:1px solid var(--glass-brd); color:var(--ink-dim); cursor:pointer; white-space:nowrap;
+  }
+  .chip.active{background:var(--teal); color:#04211c; border-color:var(--teal);}
+
+  select.status-select{
+    font-family:inherit; font-size:11px; font-weight:600; color:var(--ink);
+    background:rgba(255,255,255,0.06); border:1px solid var(--glass-brd); border-radius:9px;
+    padding:5px 7px; margin-top:5px; outline:none;
+  }
+  select.status-select option{background:#131a27;}
+
+  /* ---- Customers ---- */
+  .cust-toggle{
+    display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:600;
+    padding:6px 10px; border-radius:20px; cursor:pointer; border:1px solid var(--glass-brd);
+    background:var(--glass); color:var(--ink-dim);
+  }
+  .cust-toggle.live{color:var(--teal); border-color:rgba(24,184,155,0.35);}
+  .cust-toggle .dot{width:6px; height:6px; border-radius:50%; background:currentColor;}
+
+  /* ---- Broadcast ---- */
+  .compose{padding:16px; margin-bottom:16px;}
+  .compose textarea{
+    width:100%; min-height:92px; background:rgba(255,255,255,0.04); border:1px solid var(--glass-brd);
+    border-radius:12px; padding:12px; color:var(--ink); font-family:inherit; font-size:13.5px; resize:vertical; outline:none;
+  }
+  .compose textarea::placeholder{color:var(--ink-faint);}
+  .compose .meta{display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:11px; color:var(--ink-dim);}
+  .btn{
+    border:none; border-radius:13px; padding:13px 18px; font-family:inherit; font-weight:700; font-size:13.5px;
+    cursor:pointer; width:100%; margin-top:12px; transition:transform .1s;
+  }
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{background:linear-gradient(135deg,var(--teal),#0e9a82); color:#04211c;}
+  .btn-ghost{background:var(--glass); border:1px solid var(--glass-brd); color:var(--ink);}
+
+  .bcast-row{padding:12px 14px; margin-bottom:8px;}
+  .bcast-row .msg{font-size:12.5px; line-height:1.5; margin-bottom:8px;}
+  .bcast-stats{display:flex; gap:14px; font-size:11px; color:var(--ink-dim);}
+  .bcast-stats b{color:var(--ink); font-family:'Space Grotesk';}
+
+  /* ---- Settings ---- */
+  .settings-group{padding:6px 2px 4px; font-size:11.5px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.5px; margin:18px 0 8px;}
+  .settings-group:first-child{margin-top:4px;}
+  .set-row{
+    padding:13px 14px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .set-row .l{font-size:13px; font-weight:600;}
+  .set-row .r{font-size:11.5px; color:var(--ink-dim);}
+  .set-row input[type=text]{
+    background:rgba(255,255,255,0.05); border:1px solid var(--glass-brd); border-radius:9px; color:var(--ink);
+    font-family:inherit; font-size:12.5px; padding:7px 10px; outline:none; width:130px; text-align:right;
+  }
+  .connect-btn{
+    font-size:11.5px; font-weight:700; padding:7px 13px; border-radius:10px; border:none; cursor:pointer;
+  }
+  .connect-btn.off{background:var(--teal); color:#04211c;}
+  .connect-btn.on{background:var(--teal-soft); color:var(--teal); display:flex; align-items:center; gap:6px;}
+
+  .conn-card{padding:14px; margin-bottom:9px;}
+  .conn-card .conn-top{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+  .conn-card .token-input{
+    width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-brd); border-radius:9px;
+    color:var(--ink); font-family:inherit; font-size:12.5px; padding:9px 11px; outline:none; text-align:left;
+  }
+  .conn-card .token-input::placeholder{color:var(--ink-faint);}
+  .conn-card .hint{font-size:10.5px; color:var(--ink-faint); margin-top:6px; line-height:1.5;}
+  .conn-card .divider{display:flex; align-items:center; gap:10px; margin:12px 0; font-size:10.5px; color:var(--ink-faint);}
+  .conn-card .divider::before, .conn-card .divider::after{content:''; flex:1; height:1px; background:var(--glass-brd);}
+  .btn-fb{
+    background:linear-gradient(135deg,#1877F2,#0e5fc7); color:#fff; display:flex; align-items:center;
+    justify-content:center; gap:8px; margin-top:0;
+  }
+
+  /* ---- Bottom Nav ---- */
+  nav.bottomnav{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:460px;
+    padding:10px 4px calc(12px + env(safe-area-inset-bottom));
+    background:rgba(10,14,22,0.78);
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    border-top:1px solid var(--glass-brd);
+    display:flex; justify-content:space-between;
+    z-index:50;
+  }
+  .navbtn{
+    background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px;
+    color:var(--ink-faint); font-family:inherit; font-size:9px; font-weight:600; cursor:pointer;
+    flex:1; padding:4px 0; position:relative;
+  }
+  .navbtn svg{width:19px; height:19px; stroke:currentColor;}
+  .navbtn.active{color:var(--teal);}
+  .navbtn.active::before{
+    content:''; position:absolute; top:-10px; left:50%; transform:translateX(-50%);
+    width:22px; height:3px; border-radius:3px; background:var(--teal);
+  }
+
+  /* ---- Toast ---- */
+  .toast{
+    position:fixed; bottom:88px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:#151c29; border:1px solid var(--glass-brd-hi); color:var(--ink);
+    padding:11px 18px; border-radius:12px; font-size:12.5px; font-weight:600;
+    box-shadow:0 12px 30px -8px rgba(0,0,0,0.55);
+    opacity:0; pointer-events:none; transition:.28s ease; z-index:100; white-space:nowrap;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .empty{text-align:center; padding:34px 10px; color:var(--ink-faint); font-size:12.5px;}
+
+  /* ---- Login overlay (নতুন) ---- */
+  .login-overlay{
+    position:fixed; inset:0; z-index:200;
+    background:rgba(6,9,15,0.72);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .login-overlay.hidden{display:none;}
+  .login-card{
+    width:100%; max-width:360px; padding:26px 22px;
+    background:#0e1420; border:1px solid var(--glass-brd-hi); border-radius:20px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .login-card .lock-icon{
+    width:46px; height:46px; border-radius:14px; margin-bottom:14px;
+    background:var(--teal-soft); display:flex; align-items:center; justify-content:center;
+  }
+  .login-card h2{font-size:17px; margin:0 0 4px;}
+  .login-card p{font-size:12px; color:var(--ink-dim); margin:0 0 18px;}
+  .login-card input{
+    width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-brd); border-radius:12px;
+    color:var(--ink); font-family:inherit; font-size:13.5px; padding:12px 14px; outline:none; margin-bottom:10px;
+  }
+  .login-card input::placeholder{color:var(--ink-faint);}
+  .login-err{font-size:11.5px; color:var(--coral); margin:-2px 0 8px; min-height:14px;}
+  .locked-note{
+    display:flex; align-items:center; gap:8px; padding:11px 13px; margin-bottom:12px;
+    background:var(--gold-soft); border:1px solid rgba(232,183,75,0.3); border-radius:12px;
+    font-size:11.5px; color:var(--gold); font-weight:600;
+  }
+
+  /* ---- কাস্টমার প্রোফাইল শীট (নতুন) ---- */
+  .profile-overlay{
+    position:fixed; inset:0; z-index:180;
+    background:rgba(6,9,15,0.82);
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .profile-overlay.hidden{display:none;}
+  .profile-sheet{
+    width:100%; max-width:460px; max-height:85vh; overflow-y:auto;
+    background:#0e1420; border-radius:20px 20px 0 0; padding:20px 18px 30px;
+    border:1px solid var(--glass-brd-hi);
+  }
+  .profile-sheet .close-x{ float:right; cursor:pointer; color:var(--ink-dim); font-size:20px; line-height:1; }
+  .chat-bubble{ max-width:82%; padding:8px 12px; border-radius:14px; margin-bottom:8px; font-size:12.5px; line-height:1.5; }
+  .chat-bubble.user{ background:var(--glass); margin-right:auto; }
+  .chat-bubble.assistant{ background:var(--teal-soft); color:var(--teal); margin-left:auto; }
+  .cust-name-link{ cursor:pointer; text-decoration:underline; text-decoration-color:var(--ink-faint); }
+
+  /* ---- পেশাদার লুক: ছোট ছোট উন্নতি ---- */
+  :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+  .card{transition:border-color .2s ease, transform .15s ease;}
+  .row-card:active{transform:scale(.995);}
+  .btn,.connect-btn,.chip,.navbtn,.cust-toggle{transition:transform .12s ease, background .2s ease, color .2s ease, border-color .2s ease;}
+  .btn:disabled,.connect-btn:disabled{opacity:.6; cursor:not-allowed;}
+  ::-webkit-scrollbar{width:6px; height:6px;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.14); border-radius:6px;}
+  .topbar{padding-top:calc(20px + env(safe-area-inset-top));}
+  .page-title{letter-spacing:.2px;}
+  .section-head h2{position:relative; padding-left:10px;}
+  .section-head h2::before{content:''; position:absolute; left:0; top:4px; bottom:4px; width:3px; border-radius:3px; background:var(--teal);}
+  .settings-group.sg-head{cursor:pointer; display:flex; align-items:center; justify-content:space-between; text-transform:none; letter-spacing:0; font-size:13px; font-weight:600; color:var(--ink); padding:12px 14px; margin:10px 0 8px; background:var(--glass); border:1px solid var(--glass-brd); border-radius:12px;}
+  .sg-head .sg-chev{transition:transform .2s ease; color:var(--ink-dim);}
+  .sg-head.collapsed .sg-chev{transform:rotate(-90deg);}
+  .sg-body.collapsed{display:none;}
+  .more-item{cursor:pointer;}
+  .more-item:active{background:var(--teal-soft);}
+  textarea.token-input{width:100%; resize:vertical; font-family:inherit; line-height:1.55;}
+  @media (min-width:700px){ .app{border-left:1px solid var(--glass-brd); border-right:1px solid var(--glass-brd); box-shadow:0 0 70px rgba(0,0,0,0.45);} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <img class="brand-logo" src="icon-192.png" alt="SmartBiz">
+      <div class="brand-text">
+        <div class="name">Faruk's SmartBiz</div>
+        <div class="sub"><span class="pulse-dot"></span> AI সক্রিয় আছে</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="auth-btn locked" id="authBtn" onclick="handleAuthBtnClick()" title="লগইন">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div class="bell" onclick="openNotifications()">
+        <span class="bell-count" id="bellCount" style="display:none;">0</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c7cede" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- ================= DASHBOARD ================= -->
+    <section id="dashboard" class="active">
+      <h1 class="page-title" id="greeting">শুভ সকাল, ফারুক 👋</h1>
+      <p class="page-sub">আজকের ব্যবসার সারসংক্ষেপ দেখুন</p>
+
+      <div id="lockedNoteDashboard"></div>
+
+      <div class="revenue-card">
+        <div class="top">
+          <div>
+            <div class="label">আজকের রেভিনিউ</div>
+            <div class="value num">৳ <span id="todayRevenue">০</span></div>
+          </div>
+          <div class="pill" id="revPill">আজ</div>
+        </div>
+        <svg class="spark" viewBox="0 0 300 44" preserveAspectRatio="none">
+          <polyline id="sparkLine" points="0,40 300,40"
+            fill="none" stroke="#18b89b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="grid2">
+        <div class="card stat">
+          <div class="icon" style="background:var(--teal-soft)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#18b89b" stroke-width="2.2" stroke-linecap="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          </div>
+          <div class="label">আজকের অর্ডার</div>
+          <div class="value num" id="todayOrders">০</div>
+          <div class="delta" id="todayOrdersDelta">&nbsp;</div>
+        </div>
+        <div class="card stat">
+          <div class="icon" style="background:var(--gold-soft)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#e8b74b" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div class="label">পেন্ডিং অর্ডার</div>
+          <div class="value num" id="pendingCount">০</div>
+          <div class="delta" style="color:var(--gold)">দ্রুত দেখুন</div>
+        </div>
+        <div class="card stat">
+          <div class="icon" style="background:rgba(139,126,240,0.16)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b7ef0" stroke-width="2.2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="label">মোট কাস্টমার</div>
+          <div class="value num" id="totalCustomers">০</div>
+          <div class="delta" style="color:var(--violet)" id="custDelta">&nbsp;</div>
+        </div>
+        <div class="card stat">
+          <div class="icon" style="background:var(--coral-soft)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f05d5e" stroke-width="2.2" stroke-linecap="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          </div>
+          <div class="label">লো স্টক প্রোডাক্ট</div>
+          <div class="value num" id="lowStock">০</div>
+          <div class="delta" style="color:var(--coral); cursor:pointer;" onclick="openStock()">স্টক দেখুন →</div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>রিপোর্ট</h2>
+        <div style="display:flex; gap:6px;">
+          <div class="chip active" data-range="week" onclick="loadReport('week')">সাপ্তাহিক</div>
+          <div class="chip" data-range="month" onclick="loadReport('month')">মাসিক</div>
+        </div>
+      </div>
+      <div id="reportContent"></div>
+
+      <div class="section-head">
+        <h2>সাম্প্রতিক অর্ডার</h2>
+        <a onclick="showTab('orders')">সব দেখুন →</a>
+      </div>
+      <div id="recentOrdersList"></div>
+    </section>
+
+    <!-- ================= ORDERS ================= -->
+    <section id="orders">
+      <h1 class="page-title">অর্ডার সমূহ</h1>
+      <p class="page-sub">সব অর্ডার এক জায়গায় ম্যানেজ করুন</p>
+
+      <button class="btn btn-ghost" style="margin:0 0 12px;" onclick="exportOrders()">📥 CSV এক্সপোর্ট করুন</button>
+      <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-dim); margin:-4px 0 12px;">
+        <input type="checkbox" id="notifyCustomerChk" checked style="width:16px; height:16px; accent-color:var(--teal);">
+        স্ট্যাটাস বদলালে কাস্টমারকে মেসেজ পাঠান
+      </label>
+
+      <div class="search-wrap">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5f6b81" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="orderSearch" placeholder="নাম বা অর্ডার আইডি খুঁজুন..." oninput="renderOrders()">
+        </div>
+      </div>
+      <div class="filter-chips" id="orderFilters">
+        <div class="chip active" data-f="all">সব</div>
+        <div class="chip" data-f="Pending">পেন্ডিং</div>
+        <div class="chip" data-f="Processing">প্রসেসিং</div>
+        <div class="chip" data-f="Delivered">ডেলিভারড</div>
+        <div class="chip" data-f="Cancelled">বাতিল</div>
+      </div>
+      <div id="ordersList"></div>
+    </section>
+
+    <!-- ================= CUSTOMERS ================= -->
+    <section id="customers">
+      <h1 class="page-title">কাস্টমার সমূহ</h1>
+      <p class="page-sub">AI কথোপকথন নিয়ন্ত্রণ করুন</p>
+
+      <div class="search-wrap">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5f6b81" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="custSearch" placeholder="কাস্টমার খুঁজুন..." oninput="renderCustomers()">
+        </div>
+      </div>
+      <div id="customersList"></div>
+    </section>
+
+    <!-- ================= BROADCAST ================= -->
+    <section id="broadcast">
+      <h1 class="page-title">ব্রডকাস্ট পাঠান</h1>
+      <p class="page-sub">সব কাস্টমারকে একসাথে জানিয়ে দিন</p>
+
+      <div class="card compose">
+        <textarea id="bcastMsg" placeholder="যেমন: ঈদ উপলক্ষে সব প্রোডাক্টে ২০% ছাড়! আজই অর্ডার করুন..."></textarea>
+        <div class="meta">
+          <span id="bcastCharCount">০ অক্ষর</span>
+          <span>প্রাপক: <b class="num" id="bcastRecipientCount" style="color:var(--ink)">০ জন</b></span>
+        </div>
+        <button class="btn btn-primary" onclick="sendBroadcast()">ব্রডকাস্ট পাঠান</button>
+      </div>
+
+      <div class="section-head" style="margin-top:6px;">
+        <h2>ব্রডকাস্ট হিস্টোরি</h2>
+      </div>
+      <div id="bcastHistory"></div>
+    </section>
+
+    <!-- ================= AI শেখান (নতুন) ================= -->
+    <section id="aitrain">
+      <h1 class="page-title">AI-কে শেখান</h1>
+      <p class="page-sub">এখানে যা বলবেন, AI কাস্টমারের সাথে কথা বলার সময় সেটাই মানবে</p>
+
+      <div class="section-head" style="margin-top:6px;"><h2>AI ব্যবহার (আজ)</h2><a onclick="loadAiUsage()">রিফ্রেশ ↻</a></div>
+      <div id="aiUsageBox"></div>
+
+      <div class="section-head"><h2>AI-এর সাথে কথা বলুন</h2></div>
+      <div class="card conn-card">
+        <div id="ownerChatBox" style="display:flex; flex-direction:column; max-height:280px; overflow-y:auto; min-height:70px;"></div>
+        <div id="ownerImgChip" style="display:none; margin-top:8px; font-size:12px; color:var(--teal); font-weight:600; align-items:center; gap:8px;">
+          <img id="ownerImgPreview" style="width:38px; height:38px; border-radius:8px; object-fit:cover;">
+          <span>ছবি যোগ হয়েছে — নিচে লিখে বলুন এটা কোন প্রোডাক্টের</span>
+          <span style="margin-left:auto; cursor:pointer; color:var(--coral);" onclick="clearOwnerImage()">✕</span>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <label class="connect-btn off" style="flex-shrink:0; padding:0 12px; display:flex; align-items:center; cursor:pointer; background:var(--glass); color:var(--ink); border:1px solid var(--glass-brd);">📷
+            <input type="file" accept="image/*" style="display:none;" onchange="pickOwnerImage(event)">
+          </label>
+          <input type="text" id="ownerChatInput" class="token-input" placeholder="যেমন: এটা ১ কেজি মধুর ছবি" onkeydown="if(event.key==='Enter') sendOwnerMsg()">
+          <button class="connect-btn off" style="flex-shrink:0; padding:0 16px;" onclick="sendOwnerMsg()">পাঠান</button>
+        </div>
+        <div class="hint">উদাহরণ: "ক্যুমিন ফ্লাওয়ার হানি আবার স্টকে এসেছে" · "ডেলিভারি কতদিন লাগে জানতে চাইলে বলবে ঢাকায় ২ দিন, বাইরে ৪ দিন"।<br>📷 ছবি দিতে ক্যামেরা বাটনে চেপে ছবি বেছে নিন, তারপর লিখুন "এটা মধুর ছবি" — কাস্টমার ছবি চাইলে AI এটাই পাঠাবে।<br>⚠️ অর্ডার নেওয়ার সময় সিস্টেম Google Sheet-এর <b>Stock</b> কলামও দেখে, তাই প্রোডাক্ট আবার তুললে শিটেও Stock বাড়িয়ে দেবেন।</div>
+      </div>
+
+      <div class="section-head"><h2>সক্রিয় নির্দেশনা</h2></div>
+      <div id="aiRulesList"></div>
+
+      <div class="section-head"><h2>প্রোডাক্টের ছবি</h2></div>
+      <div id="aiImagesList" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+    </section>
+
+    <!-- ================= ফেসবুক পোস্ট (নতুন) ================= -->
+    <section id="posts">
+      <h1 class="page-title">ফেসবুক পোস্ট</h1>
+      <p class="page-sub">AI খসড়া বানাবে, আপনি দেখে সময় ঠিক করে নিশ্চিত করবেন</p>
+
+      <div class="card conn-card">
+        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">আপনার নোট: আসন্ন উপলক্ষ, অফার, কিসে জোর দেবেন</div>
+        <textarea id="postNotes" class="token-input" rows="2" placeholder="যেমন: শীত শুরু হচ্ছে, খেজুরের রসের মৌসুম; ঈদে নতুন প্যাকেজ আসছে"></textarea>
+        <button class="connect-btn off" style="margin-top:8px;" onclick="savePostNotes()">নোট সেভ করুন</button>
+      </div>
+
+      <div class="card conn-card">
+        <input type="text" id="postHint" class="token-input" placeholder="কোন প্রোডাক্ট বা থিম? (ফাঁকা রাখলে AI নিজে বেছে নেবে)" style="margin-bottom:8px;">
+        <div class="l" style="margin:2px 0 6px; font-size:12px; color:var(--ink-dim);">পোস্টের ছবি (ঐচ্ছিক — না দিলে AI সেই প্রোডাক্টের আপলোড করা ছবি বসাবে)</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <label class="chip" style="cursor:pointer;">📷 গ্যালারি থেকে ছবি<input type="file" accept="image/*" style="display:none;" onchange="pickPostImage(event)"></label>
+          <span id="postPickedNote" style="font-size:11.5px; color:var(--teal); font-weight:600;"></span>
+        </div>
+        <div id="postImgStrip" style="display:flex; gap:8px; overflow-x:auto; margin:10px 0;"></div>
+        <button class="btn btn-primary" id="postGenBtn" style="margin-top:0;" onclick="generatePostDraft()">✨ নতুন খসড়া বানান</button>
+        <button class="btn btn-ghost" style="margin-top:8px;" onclick="startManualPost()">✍️ AI ছাড়া নিজে বানাব</button>
+        <div class="hint">AI আপনার বিক্রি, স্টক, শিটের দাম, নোট ও নির্দেশনা দেখে খসড়া বানায়। প্রোডাক্টের ছবি আগে AI ট্যাবে আপলোড করা থাকলে সেটাই ডিজাইনে বসে।</div>
+      </div>
+
+      <div class="card conn-card" id="postEditor" style="display:none;">
+        <div class="hint" id="postReason" style="margin:0 0 10px; color:var(--teal); font-weight:600;"></div>
+        <canvas id="postCanvas" style="width:100%; border-radius:14px; display:block; background:#04211c;"></canvas>
+        <div class="filter-chips" style="margin-top:10px;">
+          <div class="chip active" data-t="1" onclick="setPostTemplate(1)">ডিজাইন ১</div>
+          <div class="chip" data-t="2" onclick="setPostTemplate(2)">ডিজাইন ২</div>
+          <div class="chip" data-t="3" onclick="setPostTemplate(3)">ডিজাইন ৩</div>
+          <label class="chip" style="cursor:pointer;">📷 নিজের ছবি<input type="file" accept="image/*" style="display:none;" onchange="pickPostImage(event)"></label>
+        </div>
+        <input type="text" id="postHeadline" class="token-input" placeholder="ছবির শিরোনাম" oninput="renderPostCanvas()" style="margin-bottom:8px;">
+        <input type="text" id="postSubline" class="token-input" placeholder="ছোট লাইন" oninput="renderPostCanvas()" style="margin-bottom:8px;">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-dim); white-space:nowrap;"><input type="checkbox" id="postShowPrice" onchange="renderPostCanvas()" style="accent-color:var(--teal);"> দাম দেখান</label>
+          <input type="text" id="postPrice" class="token-input" placeholder="যেমন ৳১০০০" oninput="renderPostCanvas()" style="margin:0;">
+        </div>
+        <div class="l" style="margin:6px 0; font-size:12px; color:var(--ink-dim);">ক্যাপশন (বদলাতে পারবেন)</div>
+        <textarea id="postCaption" class="token-input" rows="7"></textarea>
+        <div class="l" style="margin:12px 0 6px; font-size:12px; color:var(--ink-dim);">কখন পোস্ট হবে</div>
+        <div style="display:flex; gap:14px; margin-bottom:8px; font-size:13px;">
+          <label style="display:flex; align-items:center; gap:6px;"><input type="radio" name="postWhen" value="later" checked onchange="togglePostWhen()" style="accent-color:var(--teal);"> সময় ঠিক করব</label>
+          <label style="display:flex; align-items:center; gap:6px;"><input type="radio" name="postWhen" value="now" onchange="togglePostWhen()" style="accent-color:var(--teal);"> এখনই</label>
+        </div>
+        <input type="datetime-local" id="postWhenInput" class="token-input">
+        <div class="hint">নির্ধারিত সময়ে ফেসবুক নিজেই পোস্ট করবে — তখন অ্যাপ বা সার্ভার জেগে থাকা লাগবে না। সময় এখন থেকে কমপক্ষে ১১ মিনিট ও সর্বোচ্চ ২৯ দিনের মধ্যে হতে হবে।</div>
+        <button class="btn btn-primary" id="postConfirmBtn" onclick="confirmPost()">✅ নিশ্চিত করুন</button>
+      </div>
+
+      <div class="section-head"><h2>পোস্টের তালিকা</h2></div>
+      <div id="postsList"></div>
+    </section>
+
+    <!-- ================= EMAIL LOG (নতুন) ================= -->
+    <section id="emaillog">
+      <h1 class="page-title">ইমেইল কনফার্মেশন লগ</h1>
+      <p class="page-sub">কোন কাস্টমারকে অর্ডার কনফার্মেশন ইমেইল পাঠানো হয়েছে</p>
+      <div id="emailLogsList"></div>
+    </section>
+
+    <!-- ================= SETTINGS ================= -->
+    <section id="settings">
+      <h1 class="page-title">সেটিংস</h1>
+      <p class="page-sub">অ্যাকাউন্ট ও ব্যবসার তথ্য পরিচালনা করুন</p>
+
+      <div id="lockedNoteSettings"></div>
+
+      <div class="settings-group">অ্যাকাউন্ট</div>
+      <div class="card set-row" id="accountRow">
+        <div class="l" id="accountLabel">লগইন করা নেই</div>
+        <button class="connect-btn off" id="accountBtn" onclick="handleAuthBtnClick()">লগইন করুন</button>
+      </div>
+
+      <div class="settings-group">ব্যাকএন্ড সার্ভার</div>
+      <div class="card conn-card">
+        <div class="conn-top">
+          <div>
+            <div class="l">Server URL</div>
+            <div class="r" id="apiStatusText">যুক্ত হয়নি</div>
+          </div>
+          <button class="connect-btn off" id="apiBtn" onclick="connectApi()">Connect</button>
+        </div>
+        <input type="text" id="apiBaseInput" class="token-input" placeholder="যেমন: https://your-app.onrender.com/api">
+        <div class="hint">আপনার Node.js ব্যাকএন্ড যেখানে ডিপ্লয় করেছেন সেই URL + /api বসান। লোকাল টেস্টের জন্য: http://localhost:3000/api</div>
+      </div>
+
+      <div class="settings-group">অ্যাকাউন্ট সংযোগ</div>
+      <div class="card conn-card">
+        <div class="conn-top">
+          <div>
+            <div class="l">Facebook পেজ</div>
+            <div class="r" id="fbStatusText">সংযুক্ত নয়</div>
+          </div>
+          <button class="connect-btn off" id="fbBtn" onclick="toggleConnect('fb')">ম্যানুয়াল</button>
+        </div>
+
+        <button class="btn btn-fb" id="fbAutoBtn" onclick="autoConnectFacebook()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5 3.66 9.15 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.5 1.49-3.89 3.77-3.89 1.09 0 2.23.2 2.23.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.88h2.78l-.44 2.91h-2.34V22c4.78-.79 8.44-4.94 8.44-9.94Z"/></svg>
+          Facebook দিয়ে অটো-কানেক্ট করুন
+        </button>
+        <div class="hint" id="fbAutoHint">এক ক্লিকে Facebook লগইন হয়ে পেজ টোকেন নিজে থেকেই সংগ্রহ হবে।</div>
+
+        <div class="divider">অথবা ম্যানুয়ালি</div>
+        <input type="text" id="fbAppId" class="token-input" placeholder="Facebook App ID" style="margin-bottom:8px;">
+        <input type="text" id="fbToken" class="token-input" placeholder="Facebook Page Access Token পেস্ট করুন">
+        <div class="hint">Meta Developer কনসোল থেকে পেজ অ্যাক্সেস টোকেন কপি করে এখানে বসান, অথবা উপরের বাটন ব্যবহার করুন।</div>
+      </div>
+      <div class="card conn-card">
+        <div class="conn-top">
+          <div>
+            <div class="l">WhatsApp Business</div>
+            <div class="r" id="waStatusText">সংযুক্ত নয়</div>
+          </div>
+          <button class="connect-btn off" id="waBtn" onclick="toggleConnect('wa')">ম্যানুয়াল</button>
+        </div>
+
+        <button class="btn btn-fb" id="waAutoBtn" onclick="autoConnectWhatsApp()" style="background:linear-gradient(135deg,#25D366,#128C7E);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.44.79 3.06 1.2 4.72 1.2h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Z"/></svg>
+          WhatsApp দিয়ে অটো-কানেক্ট করুন
+        </button>
+        <div class="hint" style="margin:8px 0 12px;">Meta-র Embedded Signup পপআপ খুলবে — আপনার WhatsApp Business নাম্বার সিলেক্ট করলেই টোকেন নিজে থেকে সংগ্রহ হবে।</div>
+
+        <div class="divider">অথবা ম্যানুয়ালি</div>
+        <input type="text" id="waAppId" class="token-input" placeholder="WhatsApp Meta App ID (Facebook থেকে আলাদা হলে)" style="margin-bottom:8px;">
+        <input type="text" id="waConfigId" class="token-input" placeholder="WhatsApp Configuration ID" style="margin-bottom:8px;">
+        <input type="text" id="waToken" class="token-input" placeholder="WhatsApp Business Access Token পেস্ট করুন" style="margin-bottom:8px;">
+        <input type="text" id="waPhoneNumberId" class="token-input" placeholder="WhatsApp Phone Number ID পেস্ট করুন">
+        <div class="hint">WhatsApp Cloud API এর অ্যাক্সেস টোকেন ও Phone Number ID — দুটোই Meta Developer Dashboard এ পাবেন। Configuration ID Meta Business Portfolio সেটআপ করার সময় পাবেন।</div>
+      </div>
+
+      <div class="settings-group">Google Sheet সংযোগ</div>
+      <div class="card conn-card">
+        <div class="conn-top">
+          <div>
+            <div class="l">Google Sheet (Inventory)</div>
+            <div class="r" id="sheetStatusText">সংযুক্ত নয়</div>
+          </div>
+          <button class="connect-btn off" id="sheetBtn" onclick="toggleConnect('sheet')">Connect</button>
+        </div>
+        <input type="text" id="sheetLink" class="token-input" placeholder="Google Sheet এর শেয়ার লিংক পেস্ট করুন" style="margin-bottom:8px;">
+        <div class="hint" style="margin-bottom:10px;">এই লিংক থেকে AI প্রোডাক্টের নাম/দাম/ছবির তথ্য পড়ে। শিটটি "Anyone with the link – Viewer" করে শেয়ার করা থাকতে হবে।</div>
+
+        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">FAQ শিট লিংক (ঐচ্ছিক, আলাদা ট্যাব হলে)</div>
+        <input type="text" id="faqSheetLink" class="token-input" placeholder="FAQ ট্যাবের শেয়ার লিংক (gid সহ) পেস্ট করুন" style="margin-bottom:8px;">
+        <div class="hint" style="margin-bottom:10px;">সাধারণ প্রশ্ন-উত্তর (ডেলিভারি, পেমেন্ট ইত্যাদি) আলাদা ট্যাবে থাকলে সেই ট্যাবের লিংক এখানে বসান — AI দুটো শিটই একসাথে পড়বে।</div>
+
+        <div class="l" style="margin-bottom:6px; font-size:12px; color:var(--ink-dim);">সেটিংস ও অর্ডার স্টোরেজ (Apps Script)</div>
+        <div class="r" id="sheetStorageStatus" style="font-size:12px; margin-bottom:8px;">যাচাই হচ্ছে...</div>
+        <div class="hint">এটা এখন অ্যাপ থেকে বসাতে হয় না — Render Dashboard → Environment-এ <b>SHEET_SCRIPT_URL</b> ও <b>SHEET_SCRIPT_TOKEN</b> নামে দুটো ভ্যারিয়েবল যোগ করলেই সব সেটিংস (AI Key, Facebook Token সহ) স্থায়ীভাবে এই Google Sheet-এ সেভ থাকবে — সার্ভার রিডিপ্লয় হলেও আর হারাবে না।</div>
+      </div>
+
+      <div class="settings-group">AI ইঞ্জিন (তিনটা পর্যন্ত Key)</div>
+      <div id="aiSlots"></div>
+
+      <div class="settings-group">🔗 আপনার Webhook লিংক (Bazaar Admin-এ বসান)</div>
+      <div class="card conn-card">
+        <div class="l" style="margin-bottom:8px;">অর্ডার Webhook URL</div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="orderWebhookOut" class="token-input" readonly style="flex:1;" placeholder="আগে Server URL Connect করুন">
+          <button class="connect-btn off" style="flex-shrink:0;" onclick="copyWebhook('orderWebhookOut')">কপি</button>
+        </div>
+        <div class="hint">
+          এই লিংকটা কপি করে আপনার Bazaar Admin-এর Settings ট্যাবের "অর্ডার Webhook URL" ঘরে বসান। এরপর Bazaar Admin-এ যেকোনো নতুন অর্ডার এলেই সেই ডেটা (orderId, customer, phone, address, items, subtotal, discount, tax, shipping, total, payment, transactionId, date) সরাসরি এই SmartBiz অ্যাপে চলে আসবে এবং Orders ট্যাবে দেখা যাবে। Google Sheet সংযুক্ত থাকলে সেখানেও একটা সারি যোগ হবে।
+        </div>
+      </div>
+
+      <div class="settings-group">🤖 চ্যাট ও AI অটো-রিপ্লাই</div>
+      <div class="card conn-card">
+        <div class="set-row" style="padding:12px 14px; margin-bottom:14px; background:rgba(24,184,155,0.08); border-radius:12px;">
+          <div class="l">এই অ্যাপ থেকে AI রিপ্লাই দিতে দিন</div>
+          <input type="checkbox" id="aiAutoReplyToggle" onchange="saveAutomationSettings()" style="width:20px; height:20px; accent-color:var(--teal);">
+        </div>
+        <div class="l" style="margin-bottom:8px;">AI রিপ্লাই Webhook URL</div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="aiWebhookOut" class="token-input" readonly style="flex:1;" placeholder="আগে Server URL Connect করুন">
+          <button class="connect-btn off" style="flex-shrink:0;" onclick="copyWebhook('aiWebhookOut')">কপি</button>
+        </div>
+        <div class="hint">
+          এই লিংকটা কপি করে আপনার Bazaar Admin-এর Settings ট্যাবের "AI অটোমেশন Webhook URL" ঘরে বসান। কাস্টমার Bazaar Admin-এর চ্যাটে মেসেজ পাঠালে সেটা এই লিংকে চলে আসবে, উপরের টগল চালু থাকলে এই অ্যাপে সংযুক্ত AI Key (Settings → AI ইঞ্জিন) দিয়ে উত্তর তৈরি হয়ে সাথে সাথে Bazaar Admin-এ ফেরত যাবে। কাজ করাতে হলে Settings → AI ইঞ্জিন-এ একটা API Key সংযুক্ত থাকতে হবে।
+        </div>
+      </div>
+
+      <div class="settings-group">ব্যবসার তথ্য</div>
+      <div class="card set-row">
+        <div class="l">ডেলিভারি চার্জ</div>
+        <input type="text" value="৳ ৭০ (ঢাকা), ৳ ১৩০ (বাইরে)">
+      </div>
+      <div class="card set-row">
+        <div class="l">সাপোর্ট নাম্বার</div>
+        <input type="text" value="01XXXXXXXXX">
+      </div>
+      <div class="card set-row">
+        <div class="l">ব্যবসার ঠিকানা</div>
+        <input type="text" value="ঢাকা, বাংলাদেশ">
+      </div>
+      <div class="card set-row">
+        <div class="l">Working Hours</div>
+        <input type="text" value="সকাল ৯টা – রাত ১০টা">
+      </div>
+
+      <div class="settings-group">সিস্টেম স্ট্যাটাস</div>
+      <div class="card set-row">
+        <div class="l">Google Sheets সংযোগ</div>
+        <div class="r" id="sheetSysStatus" style="font-weight:700;">● নিষ্ক্রিয়</div>
+      </div>
+      <div class="card set-row">
+        <div class="l">AI ইঞ্জিন</div>
+        <div class="r" id="aiSysStatus" style="font-weight:700;">● নিষ্ক্রিয়</div>
+      </div>
+      <div class="card set-row">
+        <div class="l">Webhook স্ট্যাটাস</div>
+        <div class="r" style="color:var(--teal); font-weight:700;">● সচল</div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveAutomationSettings()">পরিবর্তন সংরক্ষণ করুন</button>
+    </section>
+
+  </main>
+
+  <nav class="bottomnav">
+    <button class="navbtn active" data-tab="dashboard" onclick="showTab('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      হোম
+    </button>
+    <button class="navbtn" data-tab="orders" onclick="showTab('orders')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      অর্ডার
+    </button>
+    <button class="navbtn" data-tab="customers" onclick="showTab('customers')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      কাস্টমার
+    </button>
+    <button class="navbtn" data-tab="aitrain" onclick="showTab('aitrain')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+      AI
+    </button>
+    <button class="navbtn" data-tab="posts" onclick="showTab('posts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+      পোস্ট
+    </button>
+    <button class="navbtn" data-tab="more" onclick="openMore()">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+      আরও
+    </button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ================= LOGIN OVERLAY (নতুন) ================= -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="lock-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#18b89b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h2>অ্যাডমিন লগইন</h2>
+      <p>শুধু আপনি ছাড়া আর কেউ ডেটা দেখতে বা কিছু পরিবর্তন করতে পারবে না।</p>
+      <input type="email" id="loginEmail" placeholder="ইমেইল" autocomplete="username">
+      <input type="password" id="loginPassword" placeholder="পাসওয়ার্ড" autocomplete="current-password">
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn btn-primary" style="margin-top:2px;" onclick="doLogin()">লগইন করুন</button>
+      <button class="btn btn-ghost" onclick="closeLoginOverlay()">ডিজাইন শুধু দেখুন (লগইন ছাড়া)</button>
+    </div>
+  </div>
+
+  <!-- ================= আরও মেনু (নতুন) ================= -->
+  <div class="profile-overlay hidden" id="moreOverlay" onclick="if(event.target===this) closeMore()">
+    <div class="profile-sheet">
+      <span class="close-x" onclick="closeMore()">✕</span>
+      <h1 class="page-title" style="margin-top:0;">আরও</h1>
+      <div class="card row-card more-item" onclick="goMore('broadcast')"><div class="row-avatar">📣</div><div class="row-main"><div class="t1">ব্রডকাস্ট</div><div class="t2">সব কাস্টমারকে একসাথে মেসেজ</div></div></div>
+      <div class="card row-card more-item" onclick="goMore('emaillog')"><div class="row-avatar">✉️</div><div class="row-main"><div class="t1">ইমেইল লগ</div><div class="t2">কনফার্মেশন ইমেইলের হিস্টোরি</div></div></div>
+      <div class="card row-card more-item" onclick="goMore('settings')"><div class="row-avatar">⚙️</div><div class="row-main"><div class="t1">সেটিংস</div><div class="t2">সংযোগ, AI Key, ব্যবসার তথ্য</div></div></div>
+    </div>
+  </div>
+
+  <!-- ================= নোটিফিকেশন ওভারলে (নতুন) ================= -->
+  <div class="profile-overlay hidden" id="notifOverlay">
+    <div class="profile-sheet">
+      <span class="close-x" onclick="closeNotifications()">✕</span>
+      <h1 class="page-title" style="margin-top:0;">নোটিফিকেশন</h1>
+      <button class="btn btn-primary" id="pushBtn" style="margin-top:6px; display:none;"></button>
+      <div class="hint" id="pushNote" style="margin:6px 0 14px; font-size:11px; color:var(--ink-faint);"></div>
+      <div id="notifList"></div>
+    </div>
+  </div>
+
+  <!-- ================= স্টক ওভারলে (নতুন) ================= -->
+  <div class="profile-overlay hidden" id="stockOverlay">
+    <div class="profile-sheet">
+      <span class="close-x" onclick="closeStock()">✕</span>
+      <h1 class="page-title" style="margin-top:0;">স্টক</h1>
+      <p class="page-sub">এখানে সংখ্যা বসালে অর্ডারে নিজে কমবে, বাতিল করলে ফিরবে, আর AI এখান থেকেই স্টক জানবে।</p>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+        <span style="font-size:12px; color:var(--ink-dim); white-space:nowrap;">কম স্টক সীমা</span>
+        <input type="number" min="0" id="stockThreshold" class="token-input" style="margin:0; width:70px; text-align:center;">
+        <button class="connect-btn off" onclick="saveStockThreshold()">সেভ</button>
+        <button class="connect-btn off" style="margin-left:auto; background:var(--glass); color:var(--ink); border:1px solid var(--glass-brd);" onclick="importStockFromSheet()">শিট থেকে আনুন</button>
+      </div>
+      <div id="stockList"></div>
+    </div>
+  </div>
+
+  <!-- ================= কাস্টমার প্রোফাইল ওভারলে (নতুন) ================= -->
+  <div class="profile-overlay hidden" id="profileOverlay">
+    <div class="profile-sheet">
+      <span class="close-x" onclick="closeProfile()">✕</span>
+      <div id="profileContent"></div>
+    </div>
+  </div>
+
+</div>
+
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+<script>
+/* ================= Auth (নতুন) ================= */
+let AUTH_TOKEN = localStorage.getItem('sb_token') || '';
+
+function isLoggedIn(){ return !!AUTH_TOKEN; }
+
+function openLoginOverlay(){
+  document.getElementById('loginOverlay').classList.remove('hidden');
+}
+function closeLoginOverlay(){
+  document.getElementById('loginOverlay').classList.add('hidden');
+}
+
+function handleAuthBtnClick(){
+  if(isLoggedIn()){
+    if(confirm('লগআউট করতে চান?')) doLogout();
+  } else {
+    openLoginOverlay();
+  }
+}
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  if(!email || !password){ errEl.textContent = 'ইমেইল ও পাসওয়ার্ড দুটোই লিখুন'; return; }
+  if(!apiConnected()){ errEl.textContent = 'আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'; return; }
+
+  try{
+    const res = await fetch(API_BASE + '/auth/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if(!res.ok){ errEl.textContent = data.error || 'লগইন ব্যর্থ হয়েছে'; return; }
+    AUTH_TOKEN = data.token;
+    localStorage.setItem('sb_token', AUTH_TOKEN);
+    closeLoginOverlay();
+    updateAuthUI();
+    toast('লগইন সফল হয়েছে ✓');
+    await loadEverything();
+  }catch(e){
+    errEl.textContent = 'সার্ভারে পৌঁছানো যায়নি';
+  }
+}
+
+function doLogout(){
+  AUTH_TOKEN = '';
+  localStorage.removeItem('sb_token');
+  updateAuthUI();
+  toast('লগআউট হয়েছে');
+  renderRecentOrders(); renderOrders(); renderCustomers(); renderBroadcastHistory();
+}
+
+function updateAuthUI(){
+  const btn = document.getElementById('authBtn');
+  const accLabel = document.getElementById('accountLabel');
+  const accBtn = document.getElementById('accountBtn');
+  const dashNote = document.getElementById('lockedNoteDashboard');
+  const setNote = document.getElementById('lockedNoteSettings');
+  const noteHtml = `<div class="locked-note">🔒 লগইন করা নেই — শুধু ডিজাইন দেখা যাচ্ছে, কোনো তথ্য/অ্যাকশন কাজ করবে না। <span style="text-decoration:underline; cursor:pointer;" onclick="openLoginOverlay()">লগইন করুন</span></div>`;
+
+  if(isLoggedIn()){
+    btn.classList.remove('locked'); btn.classList.add('unlocked');
+    accLabel.textContent = 'লগইন করা আছে';
+    accBtn.textContent = 'লগআউট'; accBtn.classList.add('on'); accBtn.classList.remove('off');
+    accBtn.onclick = handleAuthBtnClick;
+    dashNote.innerHTML = ''; setNote.innerHTML = '';
+  } else {
+    btn.classList.add('locked'); btn.classList.remove('unlocked');
+    accLabel.textContent = 'লগইন করা নেই';
+    accBtn.textContent = 'লগইন করুন'; accBtn.classList.add('off'); accBtn.classList.remove('on');
+    accBtn.onclick = handleAuthBtnClick;
+    dashNote.innerHTML = noteHtml; setNote.innerHTML = noteHtml;
+  }
+}
+
+/* ---------------- Backend connection ---------------- */
+let API_BASE = 'https://faruk-smartbiz-backend-1.onrender.com/api'; // এখানে কোডে সরাসরি বসানো, Settings থেকে বদলানোও যাবে
+let orders = [];
+let customers = [];
+let broadcasts = [];
+let currentOrderFilter = 'all';
+
+function apiConnected(){ return !!API_BASE; }
+
+async function apiFetch(path, options){
+  if(!apiConnected()){
+    toast('আগে Settings থেকে ব্যাকএন্ড সার্ভার Connect করুন');
+    throw new Error('API not connected');
+  }
+  if(!isLoggedIn()){
+    toast('লগইন করুন প্রথমে');
+    openLoginOverlay();
+    throw new Error('লগইন প্রয়োজন');
+  }
+  const headers = Object.assign({'Content-Type':'application/json', 'Authorization': 'Bearer ' + AUTH_TOKEN}, (options && options.headers) || {});
+  const res = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+  if(res.status === 401){
+    AUTH_TOKEN = '';
+    localStorage.removeItem('sb_token');
+    updateAuthUI();
+    openLoginOverlay();
+    throw new Error('সেশনের মেয়াদ শেষ, আবার লগইন করুন');
+  }
+  if(!res.ok){
+    const body = await res.json().catch(()=>({}));
+    throw new Error(body.error || ('সার্ভার এরর: ' + res.status));
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+async function connectApi(){
+  const input = document.getElementById('apiBaseInput');
+  const btn = document.getElementById('apiBtn');
+  const txt = document.getElementById('apiStatusText');
+  const isOn = btn.classList.contains('on');
+
+  if(isOn){
+    API_BASE = '';
+    btn.classList.remove('on'); btn.classList.add('off');
+    btn.textContent = 'Connect';
+    txt.textContent = 'যুক্ত হয়নি';
+    txt.style.color = 'var(--ink-dim)';
+    toast('ব্যাকএন্ড সার্ভার বিচ্ছিন্ন হয়েছে');
+    return;
+  }
+
+  let url = input.value.trim().replace(/\/+$/,'');
+  if(!url){ toast('আগে Server URL লিখুন'); input.focus(); return; }
+
+  btn.textContent = 'যাচাই হচ্ছে...';
+  try{
+    const res = await fetch(url + '/ping');
+    if(!res.ok) throw new Error('bad response');
+    API_BASE = url;
+    btn.classList.remove('off'); btn.classList.add('on');
+    btn.innerHTML = '● সংযুক্ত';
+    txt.textContent = 'সংযুক্ত আছে';
+    txt.style.color = 'var(--teal)';
+    toast('ব্যাকএন্ড সার্ভার সংযুক্ত হয়েছে ✓');
+    populateWebhookLinks();
+    await loadEverything();
+  }catch(e){
+    btn.textContent = 'Connect';
+    toast('সার্ভারে পৌঁছানো যায়নি — URL ঠিক আছে কিনা দেখুন');
+  }
+}
+
+async function loadEverything(){
+  if(!isLoggedIn()){
+    renderRecentOrders(); renderOrders(); renderCustomers(); renderBroadcastHistory();
+    return;
+  }
+  await Promise.allSettled([
+    loadSummary(), loadOrders(), loadCustomers(), loadBroadcasts(), loadSettingsStatus(), loadEmailLogs(), loadReport('week'), loadAiRules(), loadAiUsage(), loadAiImages(), loadNotifCount()
+  ]);
+}
+
+async function loadReport(range){
+  document.querySelectorAll('[data-range]').forEach(c=>c.classList.toggle('active', c.dataset.range===range));
+  const wrap = document.getElementById('reportContent');
+  if(!wrap) return;
+  if(!apiConnected() || !isLoggedIn()){ wrap.innerHTML=''; return; }
+  try{
+    const r = await apiFetch('/reports?range=' + range);
+    const productsHtml = r.topProducts.length
+      ? r.topProducts.map((p,i)=>`
+        <div class="card row-card" style="padding:10px 14px; margin-bottom:6px;">
+          <div class="row-main"><div class="t1">${i+1}. ${p.product}</div></div>
+          <div class="amt">${p.qty} বিক্রি</div>
+        </div>`).join('')
+      : '<div class="empty">এই সময়ে কোনো অর্ডার নেই</div>';
+    const platformHtml = r.platformBreakdown.length
+      ? r.platformBreakdown.map(p => `<div class="t2" style="margin-top:3px;">${p.platform || 'অজানা'}: <b style="color:var(--ink)">${p.count}</b></div>`).join('')
+      : '';
+    wrap.innerHTML = `
+      <div class="card" style="padding:14px; margin-bottom:10px;">
+        <div class="label">মোট অর্ডার: <b class="num" style="color:var(--ink)">${r.totalOrders}</b> · মোট রেভিনিউ: <b class="num" style="color:var(--teal)">৳${r.totalRevenue.toLocaleString()}</b></div>
+        ${platformHtml}
+      </div>
+      <div class="section-head" style="margin-top:4px;"><h2>বেস্ট সেলিং প্রোডাক্ট</h2></div>
+      ${productsHtml}
+    `;
+  }catch(e){ wrap.innerHTML = `<div class="empty">রিপোর্ট লোড করা যায়নি</div>`; }
+}
+
+/* ---------------- AI-কে শেখান (নতুন) ---------------- */
+let ownerChatHistory = [];
+let ownerPendingImage = '';
+
+function escHtml(str){
+  return String(str == null ? '' : str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderOwnerChat(){
+  const box = document.getElementById('ownerChatBox');
+  if(!box) return;
+  if(!ownerChatHistory.length){
+    box.innerHTML = '<div class="empty" style="padding:14px 6px;">AI-কে কিছু বলুন, যেমন কোন প্রোডাক্ট স্টকে আছে, কোনো প্রশ্নের কী জবাব দেবে, বা প্রোডাক্টের ছবি দিন।</div>';
+    return;
+  }
+  box.innerHTML = ownerChatHistory.map(m =>
+    `<div class="chat-bubble ${m.role === 'user' ? 'user' : 'assistant'}">${m.hasImage ? '📷 ' : ''}${escHtml(m.text)}</div>`
+  ).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ---- AI ব্যবহার ---- */
+const PROVIDER_NAMES = { groq:'Groq', openai:'OpenAI', openrouter:'OpenRouter', gemini:'Google Gemini' };
+let aiLimitsCache = {};
+
+async function loadAiUsage(){
+  const box = document.getElementById('aiUsageBox');
+  if(!box) return;
+  if(!apiConnected()){ box.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ box.innerHTML = notLoggedInMsg(); return; }
+  try{
+    const u = await apiFetch('/ai-usage');
+    aiLimitsCache = Object.assign({}, u.limits || {});
+    const providers = [];
+    [u.primary, u.backup].forEach(p => { if(p && !providers.includes(p)) providers.push(p); });
+    (u.today || []).forEach(t => { if(!providers.includes(t.provider)) providers.push(t.provider); });
+    if(!providers.length){ box.innerHTML = '<div class="empty">AI Key সংযুক্ত নেই</div>'; return; }
+
+    box.innerHTML = providers.map(p => {
+      const t = (u.today || []).find(x => x.provider === p) || { tokens:0, requests:0 };
+      const limit = Number(aiLimitsCache[p]) || 0;
+      const left = limit ? Math.max(limit - t.tokens, 0) : null;
+      const pct = limit ? Math.min(100, Math.round(t.tokens / limit * 100)) : 0;
+      const role = p === u.primary ? 'প্রধান' : (p === u.backup ? 'ব্যাকআপ' : '');
+      const r = (u.rate || {})[p] || {};
+      const rateLines = [];
+      if(r['x-ratelimit-remaining-requests'] !== undefined){
+        rateLines.push((p === 'groq' ? 'আজকের অনুরোধ বাকি' : 'এই মিনিটে অনুরোধ বাকি') + ': ' + r['x-ratelimit-remaining-requests'] + (r['x-ratelimit-limit-requests'] ? ' / ' + r['x-ratelimit-limit-requests'] : ''));
+      }
+      if(r['x-ratelimit-remaining-tokens'] !== undefined){
+        rateLines.push('এই মিনিটে টোকেন বাকি: ' + r['x-ratelimit-remaining-tokens'] + (r['x-ratelimit-limit-tokens'] ? ' / ' + r['x-ratelimit-limit-tokens'] : ''));
+      }
+      const err = (u.lastErrors || {})[p];
+      const errAgeH = err ? (Date.now() - new Date(err.at).getTime()) / 3600000 : 999;
+      const errLine = err && errAgeH < 24
+        ? `<div class="hint" style="color:var(--coral);">⚠️ সর্বশেষ সমস্যা (${new Date(err.at).toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit'})}): ${escHtml(err.message)}</div>` : '';
+      return `
+      <div class="card conn-card">
+        <div class="conn-top" style="margin-bottom:8px;">
+          <div><div class="l">${PROVIDER_NAMES[p] || p} ${role ? '· ' + role : ''}</div>
+          <div class="r">আজ ${t.tokens.toLocaleString()} টোকেন · ${t.requests}টি অনুরোধ · ৭ দিনে ${((u.week||{})[p]||0).toLocaleString()}</div></div>
+          ${left !== null ? `<div style="text-align:right;"><div class="num" style="font-size:18px; font-weight:700; color:${pct>=90?'var(--coral)':'var(--teal)'};">${left.toLocaleString()}</div><div class="r">বাকি (আনুমানিক)</div></div>` : ''}
+        </div>
+        ${limit ? `<div style="height:6px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden; margin-bottom:8px;"><div style="height:100%; width:${pct}%; background:${pct>=90?'var(--coral)':'var(--teal)'};"></div></div>` : ''}
+        ${rateLines.map(l => `<div class="hint" style="margin:2px 0;">${l}</div>`).join('')}
+        <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+          <span class="r" style="white-space:nowrap;">দৈনিক টোকেন সীমা</span>
+          <input type="number" class="token-input" id="limit_${p}" value="${limit || ''}" placeholder="যেমন 100000" style="margin:0;">
+          <button class="connect-btn off" style="flex-shrink:0;" onclick="saveAiLimit('${p}')">সেভ</button>
+        </div>
+        ${errLine}
+      </div>`;
+    }).join('') + '<div class="hint">এটা শুধু এই অ্যাপের মাধ্যমে হওয়া ব্যবহারের হিসাব। একই Key অন্য কোথাও চালালে প্রোভাইডারের আসল হিসাব বেশি হবে। OpenAI/Gemini-র ক্রেডিট ব্যালেন্স তাদের API থেকে দেখা যায় না — সেটা তাদের নিজস্ব সাইটে দেখতে হবে।</div>';
+  }catch(e){ box.innerHTML = '<div class="empty">ব্যবহারের তথ্য লোড করা যায়নি</div>'; }
+}
+
+async function saveAiLimit(provider){
+  const val = parseInt(document.getElementById('limit_' + provider).value, 10) || 0;
+  const limits = Object.assign({}, aiLimitsCache);
+  if(val > 0) limits[provider] = val; else delete limits[provider];
+  try{
+    await apiFetch('/settings', { method:'POST', body: JSON.stringify({ aiLimits: limits }) });
+    toast('সীমা সেভ হয়েছে ✓');
+    loadAiUsage();
+  }catch(e){ toast(e.message); }
+}
+
+/* ---- নির্দেশনা ---- */
+async function loadAiRules(){
+  const wrap = document.getElementById('aiRulesList');
+  if(!wrap) return;
+  if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
+  try{
+    const rules = await apiFetch('/ai-rules');
+    if(!rules.length){ wrap.innerHTML = '<div class="empty">এখনো কোনো নির্দেশনা নেই</div>'; }
+    else wrap.innerHTML = rules.map(r => `
+      <div class="card row-card">
+        <div class="row-main"><div class="t1" style="white-space:normal; line-height:1.5;">${escHtml(r.text)}</div></div>
+        <button class="connect-btn off" style="background:var(--coral-soft); color:var(--coral); flex-shrink:0;" onclick="deleteAiRule('${r.id}')">মুছুন</button>
+      </div>`).join('');
+  }catch(e){ wrap.innerHTML = '<div class="empty">নির্দেশনা লোড করা যায়নি</div>'; }
+  renderOwnerChat();
+}
+
+async function deleteAiRule(id){
+  if(!confirm('এই নির্দেশনাটা মুছে ফেলতে চান?')) return;
+  try{
+    await apiFetch('/ai-rules/' + id, { method:'DELETE' });
+    toast('নির্দেশনা মুছে ফেলা হয়েছে');
+    loadAiRules();
+  }catch(e){ toast(e.message); }
+}
+
+/* ---- ছবি ---- */
+function pickOwnerImage(evt){
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      const MAX = 1000;
+      let w = img.width, h = img.height;
+      if(w > MAX || h > MAX){
+        if(w >= h){ h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      ownerPendingImage = canvas.toDataURL('image/jpeg', 0.82);
+      document.getElementById('ownerImgPreview').src = ownerPendingImage;
+      document.getElementById('ownerImgChip').style.display = 'flex';
+      document.getElementById('ownerChatInput').focus();
+    };
+    img.onerror = function(){ toast('ছবিটা পড়া যায়নি'); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearOwnerImage(){
+  ownerPendingImage = '';
+  document.getElementById('ownerImgChip').style.display = 'none';
+}
+
+async function loadAiImages(){
+  const wrap = document.getElementById('aiImagesList');
+  if(!wrap) return;
+  if(!apiConnected() || !isLoggedIn()){ wrap.innerHTML = ''; return; }
+  try{
+    const imgs = await apiFetch('/ai-images');
+    if(!imgs.length){ wrap.innerHTML = '<div class="empty" style="width:100%;">এখনো কোনো ছবি যোগ করা হয়নি</div>'; return; }
+    wrap.innerHTML = imgs.map(i => `
+      <div class="card" style="padding:8px; width:calc(50% - 5px);">
+        <img src="${i.url}" style="width:100%; height:110px; object-fit:cover; border-radius:10px;">
+        <div class="t2" style="margin:6px 0; min-height:30px;">${escHtml(i.label)}</div>
+        <button class="connect-btn off" style="width:100%; background:var(--coral-soft); color:var(--coral);" onclick="deleteAiImage('${i.id}')">মুছুন</button>
+      </div>`).join('');
+  }catch(e){ wrap.innerHTML = '<div class="empty" style="width:100%;">ছবি লোড করা যায়নি</div>'; }
+}
+
+async function deleteAiImage(id){
+  if(!confirm('এই ছবিটা মুছে ফেলতে চান?')) return;
+  try{
+    await apiFetch('/ai-images/' + id, { method:'DELETE' });
+    toast('ছবি মুছে ফেলা হয়েছে');
+    loadAiImages();
+  }catch(e){ toast(e.message); }
+}
+
+/* ---- মালিকের চ্যাট ---- */
+async function sendOwnerMsg(){
+  const input = document.getElementById('ownerChatInput');
+  const text = input.value.trim();
+  if(!text && !ownerPendingImage) return;
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+
+  const historyForServer = ownerChatHistory.filter(m => !m.pending).slice(-6).map(m => ({ role:m.role, text:m.text }));
+  const imageToSend = ownerPendingImage;
+  ownerChatHistory.push({ role:'user', text: text || 'ছবি পাঠালাম', hasImage: !!imageToSend });
+  input.value = '';
+  ownerChatHistory.push({ role:'assistant', text:'ভাবছি...', pending:true });
+  renderOwnerChat();
+
+  try{
+    const res = await apiFetch('/ai-rules/chat', { method:'POST', body: JSON.stringify({ message:text, history:historyForServer, imageData:imageToSend }) });
+    ownerChatHistory[ownerChatHistory.length - 1] = { role:'assistant', text: res.reply || 'ঠিক আছে' };
+    renderOwnerChat();
+    if(res.saved){ toast('নির্দেশনা সংরক্ষিত হয়েছে ✓'); loadAiRules(); }
+    if(res.savedImage){ clearOwnerImage(); toast('ছবি সংরক্ষিত হয়েছে ✓'); loadAiImages(); }
+    loadAiUsage();
+  }catch(e){
+    ownerChatHistory[ownerChatHistory.length - 1] = { role:'assistant', text: e.message || 'কিছু একটা ভুল হয়েছে' };
+    renderOwnerChat();
+  }
+}
+
+/* ---------------- নোটিফিকেশন, পুশ, স্টক, হস্তান্তর (নতুন) ---------------- */
+async function loadNotifCount(){
+  if(!apiConnected() || !isLoggedIn()) return;
+  try{
+    const r = await apiFetch('/notifications/count');
+    const el = document.getElementById('bellCount');
+    if(!el) return;
+    el.textContent = r.unread > 99 ? '99+' : r.unread;
+    el.style.display = r.unread > 0 ? 'flex' : 'none';
+  }catch(e){}
+}
+
+async function openNotifications(){
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  document.getElementById('notifOverlay').classList.remove('hidden');
+  const box = document.getElementById('notifList');
+  box.innerHTML = '<div class="empty">লোড হচ্ছে...</div>';
+  updatePushButton();
+  try{
+    const r = await apiFetch('/notifications');
+    box.innerHTML = r.items.length ? r.items.map(n => `
+      <div class="card row-card" style="${n.read ? '' : 'border-color:rgba(24,184,155,0.5);'}">
+        <div class="row-main">
+          <div class="t1" style="white-space:normal;">${escHtml(n.title)}</div>
+          <div class="t2">${escHtml(n.body)}</div>
+          <div class="t2" style="color:var(--ink-faint);">${new Date(n.createdAt).toLocaleString('bn-BD')}</div>
+        </div>
+      </div>`).join('') : '<div class="empty">এখনো কোনো নোটিফিকেশন নেই</div>';
+    if(r.unread > 0){ await apiFetch('/notifications/read', { method:'POST', body:'{}' }); loadNotifCount(); }
+  }catch(e){ box.innerHTML = '<div class="empty">লোড করা যায়নি</div>'; }
+}
+function closeNotifications(){ document.getElementById('notifOverlay').classList.add('hidden'); }
+
+function urlBase64ToUint8Array(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g,'+').replace(/_/g,'/'));
+  const out = new Uint8Array(raw.length);
+  for(let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+function pushSupported(){ return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window); }
+
+async function updatePushButton(){
+  const btn = document.getElementById('pushBtn');
+  const note = document.getElementById('pushNote');
+  if(!btn) return;
+  if(!pushSupported()){ btn.style.display = 'none'; note.textContent = 'এই ব্রাউজারে পুশ নোটিফিকেশন চলে না।'; return; }
+  let subscribed = false;
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    subscribed = !!(await reg.pushManager.getSubscription()) && Notification.permission === 'granted';
+  }catch(e){}
+  btn.style.display = 'block';
+  btn.textContent = subscribed ? '🔔 টেস্ট নোটিফিকেশন পাঠান' : '📲 ফোনে নোটিফিকেশন চালু করুন';
+  btn.onclick = subscribed ? sendTestPush : enablePush;
+  note.textContent = subscribed
+    ? 'এই ফোনে নোটিফিকেশন চালু আছে।'
+    : 'চালু করলে নতুন অর্ডার, স্টক কম, বা কাস্টমার ডাকলে অ্যাপ বন্ধ থাকলেও ফোনে জানাবে।';
+}
+
+async function enablePush(){
+  if(!pushSupported()){ toast('এই ব্রাউজারে পুশ চলবে না'); return; }
+  const perm = await Notification.requestPermission();
+  if(perm !== 'granted'){ toast('অনুমতি দেওয়া হয়নি — ফোনের সেটিংস থেকে নোটিফিকেশন চালু করুন'); return; }
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const { publicKey } = await apiFetch('/push/public-key');
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
+    await apiFetch('/push/subscribe', { method:'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
+    toast('নোটিফিকেশন চালু হয়েছে ✓');
+    updatePushButton();
+  }catch(e){ toast('চালু করা যায়নি: ' + e.message); }
+}
+
+async function sendTestPush(){
+  try{ await apiFetch('/push/test', { method:'POST', body:'{}' }); toast('টেস্ট পাঠানো হয়েছে'); }
+  catch(e){ toast(e.message); }
+}
+
+async function markHandled(id){
+  try{
+    await apiFetch('/customers/' + id + '/handled', { method:'PATCH', body:'{}' });
+    const c = customers.find(x => x.id === id);
+    if(c) c.needsHuman = false;
+    renderCustomers();
+  }catch(e){ toast(e.message); }
+}
+
+/* ---- স্টক ---- */
+let stockItemsCache = [];
+async function openStock(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  document.getElementById('stockOverlay').classList.remove('hidden');
+  await loadStock();
+}
+function closeStock(){
+  document.getElementById('stockOverlay').classList.add('hidden');
+  loadSummary();
+}
+async function loadStock(){
+  const box = document.getElementById('stockList');
+  box.innerHTML = '<div class="empty">লোড হচ্ছে...</div>';
+  try{
+    const r = await apiFetch('/stock');
+    stockItemsCache = r.items;
+    document.getElementById('stockThreshold').value = r.threshold;
+    if(!r.items.length){ box.innerHTML = '<div class="empty">শিটে কোনো প্রোডাক্ট পাওয়া যায়নি। আগে Settings-এ Google Sheet সংযুক্ত করুন।</div>'; return; }
+    box.innerHTML = r.items.map((it, i) => {
+      const low = it.qty !== null && it.qty <= r.threshold;
+      const state = it.qty === null ? 'এখনো বসানো হয়নি' : (it.qty <= 0 ? '❌ স্টক শেষ' : (low ? '⚠️ কম' : '✓ আছে'));
+      return `
+      <div class="card row-card">
+        <div class="row-main">
+          <div class="t1" style="white-space:normal;">${escHtml(it.name)}</div>
+          <div class="t2">${state}${it.sheetStock !== null ? ' · শিটে: ' + it.sheetStock : ''}</div>
+        </div>
+        <input type="number" min="0" class="token-input" id="stk_${i}" value="${it.qty === null ? '' : it.qty}" placeholder="সংখ্যা" style="width:74px; margin:0; text-align:center;">
+        <button class="connect-btn off" onclick="saveStock(${i})">সেভ</button>
+      </div>`;
+    }).join('');
+  }catch(e){ box.innerHTML = '<div class="empty">স্টক লোড করা যায়নি</div>'; }
+}
+async function saveStock(i){
+  const it = stockItemsCache[i];
+  const v = document.getElementById('stk_' + i).value;
+  try{
+    await apiFetch('/stock', { method:'POST', body: JSON.stringify({ name: it.name, qty: v === '' ? null : Number(v) }) });
+    toast('স্টক সেভ হয়েছে ✓');
+    loadStock();
+  }catch(e){ toast(e.message); }
+}
+async function importStockFromSheet(){
+  try{
+    const r = await apiFetch('/stock/import', { method:'POST', body:'{}' });
+    toast(r.imported + 'টি প্রোডাক্টের সংখ্যা শিট থেকে আনা হয়েছে');
+    loadStock();
+  }catch(e){ toast(e.message); }
+}
+async function saveStockThreshold(){
+  const v = parseInt(document.getElementById('stockThreshold').value, 10);
+  if(!(v >= 0)){ toast('সঠিক সংখ্যা দিন'); return; }
+  try{
+    await apiFetch('/settings', { method:'POST', body: JSON.stringify({ lowStockThreshold: v }) });
+    toast('সেভ হয়েছে ✓');
+    loadStock();
+  }catch(e){ toast(e.message); }
+}
+
+
+async function exportOrders(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('আগে লগইন করুন'); openLoginOverlay(); return; }
+  try{
+    const res = await fetch(API_BASE + '/orders/export', { headers: { Authorization: 'Bearer ' + AUTH_TOKEN } });
+    if(res.status === 401){ toast('সেশনের মেয়াদ শেষ, আবার লগইন করুন'); AUTH_TOKEN=''; localStorage.removeItem('sb_token'); updateAuthUI(); openLoginOverlay(); return; }
+    if(!res.ok) throw new Error('এক্সপোর্ট ব্যর্থ হয়েছে');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'orders.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('অর্ডার এক্সপোর্ট হয়েছে ✓');
+  }catch(e){ toast(e.message); }
+}
+
+async function openCustomerProfile(id){
+  const overlay = document.getElementById('profileOverlay');
+  const content = document.getElementById('profileContent');
+  overlay.classList.remove('hidden');
+  content.innerHTML = '<div class="empty">লোড হচ্ছে...</div>';
+  try{
+    const data = await apiFetch('/customers/' + id);
+    const { customer, orders, conversation } = data;
+    const ordersHtml = orders.length
+      ? orders.map(o => `
+        <div class="card row-card" style="margin-bottom:8px;">
+          <div class="row-main">
+            <div class="t1">${o.product} x${o.qty}</div>
+            <div class="t2">${o.id} · ৳${(o.price||0)*(o.qty||1)}</div>
+          </div>
+          ${statusBadge(o.status)}
+        </div>`).join('')
+      : '<div class="empty">কোনো অর্ডার নেই</div>';
+    const chatHtml = conversation.length
+      ? conversation.map(m => `<div class="chat-bubble ${m.role==='user'?'user':'assistant'}">${m.text}</div>`).join('')
+      : '<div class="empty">কোনো কথোপকথন নেই</div>';
+    content.innerHTML = `
+      <h1 class="page-title" style="margin-top:0;">${customer.name}</h1>
+      <p class="page-sub">${customer.phone || ''} ${customer.phone ? '· ' : ''}${customer.platform === 'facebook' ? 'Messenger' : customer.platform === 'whatsapp' ? 'WhatsApp' : 'ওয়েবসাইট'}</p>
+      <div class="section-head"><h2>অর্ডার হিস্টোরি</h2></div>
+      ${ordersHtml}
+      <div class="section-head"><h2>কথোপকথন</h2></div>
+      <div style="display:flex; flex-direction:column;">${chatHtml}</div>
+    `;
+  }catch(e){
+    content.innerHTML = `<div class="empty">লোড করা যায়নি: ${e.message}</div>`;
+  }
+}
+
+function closeProfile(){
+  document.getElementById('profileOverlay').classList.add('hidden');
+}
+
+async function loadEmailLogs(){
+  if(!apiConnected() || !isLoggedIn()) return;
+  const wrap = document.getElementById('emailLogsList');
+  if(!wrap) return;
+  try{
+    const logs = await apiFetch('/email-logs');
+    if(!logs.length){ wrap.innerHTML = `<div class="empty">এখনো কোনো ইমেইল পাঠানো হয়নি</div>`; return; }
+    wrap.innerHTML = logs.map(l => `
+      <div class="row-card" style="padding:10px 0; border-bottom:1px solid var(--glass-brd); margin-bottom:0;">
+        <div class="row-main">
+          <div class="t1">${l.to}</div>
+          <div class="t2">${l.customerName || ''} · অর্ডার ${l.orderId} · ${l.date}</div>
+        </div>
+        <div class="row-end">
+          <span class="badge ${l.sent ? 'delivered' : 'cancelled'}">${l.sent ? 'পাঠানো হয়েছে' : 'ব্যর্থ'}</span>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){ wrap.innerHTML = `<div class="empty">লগ লোড করা যায়নি</div>`; }
+}
+
+/* ---------------- Tab switching ---------------- */
+const MORE_TABS = ['broadcast', 'emaillog', 'settings'];
+function showTab(tab){
+  document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab || (b.dataset.tab==='more' && MORE_TABS.includes(tab))));
+  window.scrollTo({top:0, behavior:'instant'});
+  if(tab==='aitrain'){ loadAiUsage(); loadAiRules(); loadAiImages(); }
+  if(tab==='posts'){ loadPosts(); }
+}
+function openMore(){ document.getElementById('moreOverlay').classList.remove('hidden'); }
+function closeMore(){ document.getElementById('moreOverlay').classList.add('hidden'); }
+function goMore(tab){ closeMore(); showTab(tab); }
+
+/* ---------------- Toast ---------------- */
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- Renderers ---------------- */
+function statusBadge(status){
+  const map = {Pending:'পেন্ডিং', Processing:'প্রসেসিং', Delivered:'ডেলিভারড', Cancelled:'বাতিল'};
+  return `<span class="badge ${status.toLowerCase()}">${map[status]}</span>`;
+}
+
+function initials(name){ return ((name || '').trim().charAt(0)) || '?'; }
+
+// নাম জানা না গেলে (Meta অনেক সময় নাম দেয় না) প্ল্যাটফর্ম + আইডির শেষ ৪ অক্ষর দেখাই,
+// যাতে একজনকে আরেকজন থেকে আলাদা করা যায়
+function customerDisplayName(c){
+  if(c.name && c.name !== 'অজানা কাস্টমার') return c.name;
+  const plat = c.platform === 'facebook' ? 'Messenger' : c.platform === 'whatsapp' ? 'WhatsApp' : 'কাস্টমার';
+  return plat + ' ···' + String(c.platformId || c.id || '').slice(-4);
+}
+
+function notConnectedMsg(){
+  return `<div class="empty">ব্যাকএন্ড সার্ভার সংযুক্ত নেই।<br>Settings ট্যাবে গিয়ে সার্ভার Connect করুন।</div>`;
+}
+function notLoggedInMsg(){
+  return `<div class="empty">🔒 লগইন করা নেই।<br>তথ্য দেখতে হলে আগে লগইন করুন।</div>`;
+}
+
+async function loadOrders(){
+  if(!apiConnected() || !isLoggedIn()){ renderRecentOrders(); renderOrders(); return; }
+  try{
+    orders = await apiFetch('/orders');
+  }catch(e){ orders = []; }
+  renderRecentOrders();
+  renderOrders();
+  updateDashboardStats();
+}
+
+function renderRecentOrders(){
+  const wrap = document.getElementById('recentOrdersList');
+  if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
+  if(!orders.length){ wrap.innerHTML = `<div class="empty">এখনো কোনো অর্ডার আসেনি</div>`; return; }
+  wrap.innerHTML = orders.slice(0,4).map(o=>`
+    <div class="card row-card">
+      <div class="row-avatar">${initials(o.name)}</div>
+      <div class="row-main">
+        <div class="t1">${o.name}</div>
+        <div class="t2">${o.product} · ${o.id}</div>
+      </div>
+      <div class="row-end">
+        <div class="amt">৳${o.price.toLocaleString()}</div>
+        ${statusBadge(o.status)}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderOrders(){
+  const wrap = document.getElementById('ordersList');
+  if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
+  const q = document.getElementById('orderSearch').value.trim().toLowerCase();
+  let filtered = orders.filter(o=>{
+    const matchesFilter = currentOrderFilter==='all' || o.status===currentOrderFilter;
+    const matchesSearch = !q || o.name.toLowerCase().includes(q) || o.id.toLowerCase().includes(q);
+    return matchesFilter && matchesSearch;
+  });
+  if(!filtered.length){
+    wrap.innerHTML = `<div class="empty">কোনো অর্ডার পাওয়া যায়নি</div>`;
+    return;
+  }
+  wrap.innerHTML = filtered.map(o=>`
+    <div class="card row-card">
+      <div class="row-avatar">${initials(o.name)}</div>
+      <div class="row-main">
+        <div class="t1">${o.name}</div>
+        <div class="t2">${o.product} · x${o.qty} · ${o.source}</div>
+        ${(o.phone || o.address) ? `<div class="t2" style="margin-top:1px;">${[o.phone, o.address].filter(Boolean).join(' · ')}</div>` : ''}
+        <select class="status-select" onchange="updateStatus('${o.id}', this.value)">
+          <option ${o.status==='Pending'?'selected':''}>Pending</option>
+          <option ${o.status==='Processing'?'selected':''}>Processing</option>
+          <option ${o.status==='Delivered'?'selected':''}>Delivered</option>
+          <option ${o.status==='Cancelled'?'selected':''}>Cancelled</option>
+        </select>
+        ${o.notifyStatus==='failed' ? `<div class="t2" style="color:var(--coral);">⚠️ ${escHtml(o.notifyNote||'কাস্টমারকে জানানো যায়নি')}</div>` : ''}
+      </div>
+      <div class="row-end">
+        <div class="amt">৳${o.price.toLocaleString()}</div>
+        ${statusBadge(o.status)}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updateStatus(id, newStatus){
+  const chk = document.getElementById('notifyCustomerChk');
+  const notify = chk ? chk.checked : true;
+  let res;
+  try{
+    res = await apiFetch('/orders/' + id, { method:'PATCH', body: JSON.stringify({ status:newStatus, notify }) });
+  }catch(e){ toast(e.message); renderOrders(); return; }
+  const o = orders.find(x=>x.id===id);
+  if(o){ o.status = newStatus; if(res){ o.notifyStatus = res.notifyStatus; o.notifyNote = res.notifyNote; } }
+  renderOrders();
+  renderRecentOrders();
+  updateDashboardStats();
+  let extra = '';
+  if(res && res.notifyStatus === 'sent') extra = ' — কাস্টমারকে জানানো হয়েছে ✓';
+  else if(res && res.notifyStatus === 'failed') extra = ' — ⚠️ কাস্টমারকে জানানো যায়নি';
+  toast(`${id} → ${newStatus}${extra}`);
+}
+
+async function loadCustomers(){
+  if(!apiConnected() || !isLoggedIn()){ renderCustomers(); return; }
+  try{
+    customers = await apiFetch('/customers');
+  }catch(e){ customers = []; }
+  renderCustomers();
+  updateDashboardStats();
+}
+
+function chatLink(c){
+  if(c.platform === 'facebook' && c.platformId) return 'https://www.messenger.com/t/' + c.platformId;
+  if(c.platform === 'whatsapp' && c.platformId) return 'https://wa.me/' + c.platformId.replace(/[^0-9]/g,'');
+  if(c.platform === 'website' && c.phone) return 'https://wa.me/' + c.phone.replace(/[^0-9]/g,'');
+  return null;
+}
+
+function renderCustomers(){
+  const wrap = document.getElementById('customersList');
+  if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
+  const q = document.getElementById('custSearch').value.trim().toLowerCase();
+  let filtered = customers.filter(c=> !q || customerDisplayName(c).toLowerCase().includes(q));
+  if(!filtered.length){
+    wrap.innerHTML = `<div class="empty">এখনো কোনো কাস্টমার মেসেজ করেনি</div>`;
+    return;
+  }
+  wrap.innerHTML = filtered.map(c=>{
+    const link = chatLink(c);
+    const linkLabel = c.platform === 'website' ? 'WhatsApp' : (c.platform === 'facebook' ? 'Messenger' : 'WhatsApp');
+    const platformLabel = c.platform === 'facebook' ? 'Messenger' : c.platform === 'whatsapp' ? 'WhatsApp' : c.platform === 'website' ? 'ওয়েবসাইট' : (c.platform || '');
+    const avatar = c.photoUrl
+      ? `<img src="${c.photoUrl}" style="width:40px;height:40px;border-radius:11px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div class=row-avatar>${initials(customerDisplayName(c))}</div>'">`
+      : `<div class="row-avatar">${initials(customerDisplayName(c))}</div>`;
+    return `
+    <div class="card row-card">
+      ${avatar}
+      <div class="row-main">
+        <div class="t1 cust-name-link" onclick="openCustomerProfile('${c.id}')">${escHtml(customerDisplayName(c))}</div>
+        <div class="t2">${c.phone || platformLabel} · ${platformLabel} · মোট অর্ডার ${c.orders}</div>
+        ${c.needsHuman ? `<div class="t2" style="color:var(--coral); font-weight:600;">🙋 মানুষের অপেক্ষায়: ${escHtml(c.needsHumanReason||'')} <span style="text-decoration:underline; cursor:pointer;" onclick="markHandled('${c.id}')">দেখেছি ✓</span></div>` : ''}
+        ${link ? `<a href="${link}" target="_blank" style="font-size:11px; color:var(--teal); font-weight:600; text-decoration:none;">${linkLabel}-এ চ্যাট খুলুন →</a>` : ''}
+      </div>
+      <div class="cust-toggle ${c.ai?'live':''}" onclick="toggleAi('${c.id}')">
+        <span class="dot"></span> ${c.ai ? 'AI চালু' : 'AI বন্ধ'}
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+async function toggleAi(id){
+  const c = customers.find(x=>x.id===id);
+  if(!c) return;
+  const newVal = !c.ai;
+  try{
+    await apiFetch('/customers/' + id + '/ai', { method:'PATCH', body: JSON.stringify({ai:newVal}) });
+  }catch(e){ toast(e.message); return; }
+  c.ai = newVal;
+  renderCustomers();
+  toast(c.ai ? `${c.name} এর জন্য AI পুনরায় চালু হয়েছে` : `${c.name} এর চ্যাট এখন আপনার হাতে`);
+}
+
+async function loadBroadcasts(){
+  if(!apiConnected() || !isLoggedIn()){ renderBroadcastHistory(); return; }
+  try{
+    broadcasts = await apiFetch('/broadcast');
+  }catch(e){ broadcasts = []; }
+  renderBroadcastHistory();
+}
+
+function renderBroadcastHistory(){
+  const wrap = document.getElementById('bcastHistory');
+  if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
+  if(!broadcasts.length){
+    wrap.innerHTML = `<div class="empty">এখনো কোনো ব্রডকাস্ট পাঠানো হয়নি</div>`;
+    return;
+  }
+  wrap.innerHTML = broadcasts.map(b=>`
+    <div class="card bcast-row">
+      <div class="msg">${b.msg}</div>
+      <div class="bcast-stats">
+        <span>প্রাপক <b>${b.total}</b></span>
+        <span style="color:var(--teal)">সফল <b>${b.success}</b></span>
+        <span style="color:var(--coral)">ব্যর্থ <b>${b.failed}</b></span>
+        <span style="margin-left:auto; color:var(--ink-faint)">${b.date}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function sendBroadcast(){
+  const el = document.getElementById('bcastMsg');
+  const msg = el.value.trim();
+  if(!msg){ toast('মেসেজ লিখুন প্রথমে'); return; }
+  let record;
+  try{
+    record = await apiFetch('/broadcast', { method:'POST', body: JSON.stringify({message:msg}) });
+  }catch(e){ toast(e.message); return; }
+  broadcasts.unshift(record);
+  el.value = '';
+  updateCharCount();
+  renderBroadcastHistory();
+  toast('ব্রডকাস্ট সফলভাবে পাঠানো হয়েছে ✓');
+}
+
+function updateCharCount(){
+  const len = document.getElementById('bcastMsg').value.length;
+  document.getElementById('bcastCharCount').textContent = `${len} অক্ষর`;
+}
+
+async function loadSummary(){
+  if(!apiConnected() || !isLoggedIn()) return;
+  try{
+    const s = await apiFetch('/dashboard/summary');
+    document.getElementById('todayRevenue').textContent = s.todayRevenue.toLocaleString();
+    document.getElementById('todayOrders').textContent = s.todayOrders;
+    document.getElementById('pendingCount').textContent = s.pendingCount;
+    document.getElementById('totalCustomers').textContent = s.totalCustomers;
+    document.getElementById('lowStock').textContent = s.lowStockCount ?? 0;
+    renderTrend(s);
+  }catch(e){ /* সাইলেন্টলি রাখলাম, orders/customers লোড হলে updateDashboardStats() দিয়ে সামঞ্জস্য হবে */ }
+}
+
+function updateDashboardStats(){
+  if(!apiConnected() || !isLoggedIn()) return;
+  const bdDay = d => new Date(d).toLocaleDateString('en-CA', { timeZone:'Asia/Dhaka' });
+  const todayStr = bdDay(Date.now());
+  document.getElementById('todayOrders').textContent = orders.filter(o => bdDay(o.createdAt) === todayStr).length;
+  const d1 = document.getElementById('todayOrdersDelta'); if(d1) d1.textContent = 'মোট ' + orders.length + 'টি অর্ডার';
+  const waiting = customers.filter(c => c.needsHuman).length;
+  const d2 = document.getElementById('custDelta'); if(d2) d2.textContent = waiting ? ('🙋 ' + waiting + ' জন অপেক্ষায়') : '';
+  document.getElementById('pendingCount').textContent = orders.filter(o=>o.status==='Pending').length;
+  document.getElementById('totalCustomers').textContent = customers.length;
+  document.getElementById('bcastRecipientCount').textContent = customers.length + ' জন';
+}
+
+/* ================= AI Key-র ঘর (তিনটা), যেকোনো AI ================= */
+const AI_PROVIDERS = [
+  ['groq','Groq (Llama)'], ['openai','OpenAI (ChatGPT)'], ['gemini','Google Gemini'], ['openrouter','OpenRouter'],
+  ['deepseek','DeepSeek'], ['mistral','Mistral'], ['custom','অন্য যেকোনো AI (OpenAI-সামঞ্জস্যপূর্ণ)']
+];
+const AI_DEFAULT_MODEL = {
+  groq:'llama-3.3-70b-versatile', openai:'gpt-4o-mini', gemini:'gemini-2.0-flash', openrouter:'openai/gpt-4o-mini',
+  deepseek:'deepseek-chat', mistral:'mistral-small-latest', custom:'মডেলের নাম লিখুন (বাধ্যতামূলক)'
+};
+const AI_SLOT_DEFS = [
+  { type:'ai',  sfx:'',  title:'প্রধান AI' },
+  { type:'ai2', sfx:'2', title:'ব্যাকআপ AI ১' },
+  { type:'ai3', sfx:'3', title:'ব্যাকআপ AI ২' }
+];
+
+function renderAiSlots(){
+  const box = document.getElementById('aiSlots');
+  if(!box) return;
+  box.innerHTML = AI_SLOT_DEFS.map(d => `
+    <div class="card conn-card">
+      <div class="conn-top">
+        <div><div class="l">${d.title}</div><div class="r" id="${d.type}StatusText">সংযুক্ত নয়</div></div>
+        <button class="connect-btn off" id="${d.type}Btn" onclick="toggleConnect('${d.type}')">Connect</button>
+      </div>
+      <select id="aiProvider${d.sfx}" class="status-select" onchange="onAiProviderChange('${d.sfx}')" style="width:100%; margin-bottom:8px; padding:9px 11px;">
+        ${AI_PROVIDERS.map(p => `<option value="${p[0]}">${p[1]}</option>`).join('')}
+      </select>
+      <input type="password" id="aiKey${d.sfx}" class="token-input" placeholder="API Key পেস্ট করুন" style="margin-bottom:8px;">
+      <input type="text" id="aiModel${d.sfx}" class="token-input" placeholder="মডেলের নাম (ঐচ্ছিক)" style="margin-bottom:8px;">
+      <input type="text" id="aiBaseUrl${d.sfx}" class="token-input" placeholder="Base URL, যেমন https://api.example.com/v1" style="display:none; margin-bottom:8px;">
+      <div class="hint" id="aiHint${d.sfx}"></div>
+    </div>`).join('') +
+    '<div class="hint" style="margin:-2px 2px 8px;">প্রধান Key কোটা বা এররে আটকালে স্বয়ংক্রিয়ভাবে পরের ঘরের Key দিয়ে চেষ্টা হয়। ছবি দেখা ও ভয়েস শোনার জন্য অন্তত একটা Groq/OpenAI/Gemini Key থাকা দরকার।</div>';
+  AI_SLOT_DEFS.forEach(d => onAiProviderChange(d.sfx));
+}
+
+function onAiProviderChange(sfx){
+  const sel = document.getElementById('aiProvider' + sfx);
+  if(!sel) return;
+  const p = sel.value;
+  const base = document.getElementById('aiBaseUrl' + sfx);
+  const model = document.getElementById('aiModel' + sfx);
+  const hint = document.getElementById('aiHint' + sfx);
+  if(base) base.style.display = (p === 'custom') ? 'block' : 'none';
+  if(model) model.placeholder = (p === 'custom') ? AI_DEFAULT_MODEL.custom : ('মডেলের নাম (ঐচ্ছিক, ডিফল্ট: ' + (AI_DEFAULT_MODEL[p] || '') + ')');
+  if(hint) hint.textContent = (p === 'custom')
+    ? 'যেকোনো AI যার API OpenAI-র মতো (chat/completions), যেমন Together, Fireworks, Cerebras, নিজের সার্ভার। Base URL আর মডেলের নাম ওই সার্ভিসের ডকুমেন্টেশনে পাবেন।'
+    : 'মডেল ফাঁকা রাখলে ডিফল্ট ব্যবহার হবে। কোনো মডেল বন্ধ হয়ে গেলে এখানে নতুন মডেলের নাম বসান। প্রোভাইডার পাল্টালে সেই প্রোভাইডারেরই Key বসাতে হবে।';
+}
+
+/* ================= সেটিংস: ভাঁজ করা সেকশন ================= */
+function makeSettingsCollapsible(){
+  const sec = document.getElementById('settings');
+  if(!sec) return;
+  let saved = {};
+  try{ saved = JSON.parse(localStorage.getItem('sb_sg') || '{}'); }catch(e){}
+  Array.from(sec.querySelectorAll(':scope > .settings-group')).forEach((g, idx) => {
+    const key = g.textContent.trim();
+    const body = document.createElement('div');
+    body.className = 'sg-body';
+    const nodes = [];
+    let n = g.nextElementSibling;
+    while(n && !n.classList.contains('settings-group') && n.getAttribute('onclick') !== 'saveAutomationSettings()'){
+      nodes.push(n); n = n.nextElementSibling;
+    }
+    nodes.forEach(x => body.appendChild(x));
+    g.after(body);
+    g.innerHTML = '<span>' + g.innerHTML + '</span><span class="sg-chev">▾</span>';
+    g.classList.add('sg-head');
+    const collapsed = (key in saved) ? saved[key] : idx !== 0;
+    g.classList.toggle('collapsed', collapsed);
+    body.classList.toggle('collapsed', collapsed);
+    g.addEventListener('click', () => {
+      const now = !g.classList.contains('collapsed');
+      g.classList.toggle('collapsed', now);
+      body.classList.toggle('collapsed', now);
+      saved[key] = now;
+      try{ localStorage.setItem('sb_sg', JSON.stringify(saved)); }catch(e){}
+    });
+  });
+}
+
+/* ================= হোম: শুভেচ্ছা ও আসল ৭ দিনের গ্রাফ ================= */
+function setGreeting(){
+  const el = document.getElementById('greeting');
+  if(!el) return;
+  const h = new Date().getHours();
+  const g = h < 5 ? 'শুভ রাত্রি' : h < 12 ? 'শুভ সকাল' : h < 16 ? 'শুভ দুপুর' : h < 19 ? 'শুভ বিকেল' : 'শুভ সন্ধ্যা';
+  el.textContent = g + ', ফারুক 👋';
+}
+
+function renderTrend(s){
+  const t = s.trend || [];
+  const line = document.getElementById('sparkLine');
+  if(line && t.length > 1){
+    const max = Math.max.apply(null, t.concat([1]));
+    line.setAttribute('points', t.map((v, i) => Math.round(i * 300 / (t.length - 1)) + ',' + Math.round(40 - (v / max) * 34)).join(' '));
+  }
+  const pill = document.getElementById('revPill');
+  if(pill && t.length >= 2){
+    const y = t[t.length - 2], d = t[t.length - 1];
+    if(y > 0){
+      const pct = Math.round((d - y) / y * 100);
+      pill.textContent = (pct >= 0 ? '▲ ' : '▼ ') + Math.abs(pct) + '% গতকালের তুলনায়';
+      pill.style.background = pct >= 0 ? '' : 'var(--coral-soft)';
+      pill.style.color = pct >= 0 ? '' : 'var(--coral)';
+    } else { pill.textContent = 'আজ'; }
+  }
+}
+
+/* ================= ফেসবুক পোস্ট ================= */
+let postDraft = null, postImageEl = null, postTemplate = 1, postLogoEl = null, postCustomImage = false;
+
+function postVal(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+
+function loadImageEl(url){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('ছবি লোড হয়নি'));
+    img.src = url;
+  });
+}
+
+function toLocalInput(d){
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+async function savePostNotes(){
+  if(!apiConnected() || !isLoggedIn()){ toast('লগইন করুন প্রথমে'); return; }
+  try{
+    await apiFetch('/settings', { method:'POST', body: JSON.stringify({ postNotes: postVal('postNotes').slice(0, 600) }) });
+    toast('নোট সেভ হয়েছে ✓');
+  }catch(e){ toast(e.message); }
+}
+
+function setPostTemplate(t){
+  postTemplate = t;
+  document.querySelectorAll('[data-t]').forEach(c => c.classList.toggle('active', Number(c.dataset.t) === t));
+  renderPostCanvas();
+}
+
+function togglePostWhen(){
+  const later = document.querySelector('input[name=postWhen]:checked').value === 'later';
+  document.getElementById('postWhenInput').style.display = later ? 'block' : 'none';
+}
+
+function pickPostImage(evt){
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      postImageEl = img; postCustomImage = true;
+      const note = document.getElementById('postPickedNote'); if(note) note.textContent = 'ছবি বাছা হয়েছে ✓';
+      renderPostCanvas();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// AI ট্যাবে আগে আপলোড করা প্রোডাক্টের ছবিগুলো ছোট করে দেখায় — ট্যাপ করলে পোস্টের ছবি হিসেবে বসে
+async function loadPostImageStrip(){
+  const strip = document.getElementById('postImgStrip');
+  if(!strip || !apiConnected() || !isLoggedIn()) return;
+  try{
+    const imgs = await apiFetch('/ai-images');
+    strip.innerHTML = imgs.length
+      ? imgs.map(i => `<img src="${i.url}" title="${escHtml(i.label)}" onclick="useStoredImage('${i.url}')" style="width:62px; height:62px; border-radius:10px; object-fit:cover; flex-shrink:0; cursor:pointer; border:1px solid var(--glass-brd);">`).join('')
+      : '<div class="hint" style="margin:0;">AI ট্যাবে প্রোডাক্টের ছবি আপলোড করলে এখানে দেখাবে।</div>';
+  }catch(e){ strip.innerHTML = ''; }
+}
+
+async function useStoredImage(url){
+  try{
+    postImageEl = await loadImageEl(url + '?c=' + Date.now());
+    postCustomImage = true;
+    const note = document.getElementById('postPickedNote'); if(note) note.textContent = 'ছবি বাছা হয়েছে ✓';
+    renderPostCanvas();
+    toast('ছবি বসানো হয়েছে ✓');
+  }catch(e){ toast('ছবিটা লোড হয়নি'); }
+}
+
+function startManualPost(){
+  postDraft = { productName: '' };
+  ['postHeadline', 'postSubline', 'postPrice', 'postCaption'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('postShowPrice').checked = false;
+  document.getElementById('postReason').textContent = '✍️ নিজে বানানো পোস্ট — ছবি, শিরোনাম আর ক্যাপশন নিজে দিন';
+  const t = new Date(Date.now() + 90 * 60000);
+  t.setMinutes(t.getMinutes() < 30 ? 30 : 60, 0, 0);
+  document.getElementById('postWhenInput').value = toLocalInput(t);
+  document.querySelector('input[name=postWhen][value=later]').checked = true;
+  togglePostWhen();
+  document.getElementById('postEditor').style.display = 'block';
+  renderPostCanvas();
+  document.getElementById('postEditor').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+async function generatePostDraft(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  const btn = document.getElementById('postGenBtn');
+  btn.disabled = true; btn.textContent = 'AI ভাবছে...';
+  try{
+    const r = await apiFetch('/posts/generate', { method:'POST', body: JSON.stringify({ hint: postVal('postHint') }) });
+    const d = r.draft;
+    postDraft = d;
+    if(!postCustomImage){
+      postImageEl = null;
+      if(d.imageUrl){
+        try{ postImageEl = await loadImageEl(d.imageUrl + '?c=' + Date.now()); }
+        catch(e){ toast('প্রোডাক্টের ছবি লোড হয়নি — "নিজের ছবি" দিয়ে ছবি বেছে নিন'); }
+      }
+    }
+    document.getElementById('postHeadline').value = d.headline || '';
+    document.getElementById('postSubline').value = d.subline || '';
+    document.getElementById('postPrice').value = d.priceText || '';
+    document.getElementById('postShowPrice').checked = !!d.priceText;
+    document.getElementById('postCaption').value = d.caption || '';
+    document.getElementById('postReason').textContent = (d.productName ? '📌 ' + d.productName + ' — ' : '') + (d.reason || '');
+    if(!d.imageId && !postImageEl){
+      document.getElementById('postReason').textContent += ' · এই প্রোডাক্টের ছবি আপলোড করা নেই, "📷 নিজের ছবি" দিয়ে ছবি দিন।';
+    }
+    const t = new Date(Date.now() + 90 * 60000);
+    t.setMinutes(t.getMinutes() < 30 ? 30 : 60, 0, 0);
+    document.getElementById('postWhenInput').value = toLocalInput(t);
+    document.querySelector('input[name=postWhen][value=later]').checked = true;
+    togglePostWhen();
+    document.getElementById('postEditor').style.display = 'block';
+    await renderPostCanvas();
+    document.getElementById('postEditor').scrollIntoView({ behavior:'smooth', block:'start' });
+  }catch(e){
+    alert(e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '✨ নতুন খসড়া বানান';
+  }
+}
+
+function wrapLines(ctx, text, maxW){
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = '';
+  words.forEach(w => {
+    const test = cur ? cur + ' ' + w : w;
+    if(ctx.measureText(test).width > maxW && cur){ lines.push(cur); cur = w; } else { cur = test; }
+  });
+  if(cur) lines.push(cur);
+  return lines;
+}
+
+function drawPill(ctx, text, x, y, fontPx, align){
+  ctx.font = '700 ' + fontPx + 'px "Hind Siliguri","Noto Sans Bengali",sans-serif';
+  const padX = 30, h = fontPx + 26;
+  const w = ctx.measureText(text).width + padX * 2;
+  const left = align === 'right' ? x - w : x;
+  ctx.fillStyle = '#e8b74b';
+  ctx.beginPath();
+  if(ctx.roundRect){ ctx.roundRect(left, y, w, h, h / 2); } else { ctx.rect(left, y, w, h); }
+  ctx.fill();
+  ctx.fillStyle = '#2a1d00';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.fillText(text, left + padX, y + h / 2 + 2);
+}
+
+async function renderPostCanvas(){
+  const c = document.getElementById('postCanvas');
+  if(!c) return;
+  const W = 1080;
+  c.width = W; c.height = W;
+  const ctx = c.getContext('2d');
+  try{
+    await document.fonts.load('700 70px "Hind Siliguri"');
+    await document.fonts.load('500 40px "Hind Siliguri"');
+  }catch(e){}
+  const F = (w, px) => w + ' ' + px + 'px "Hind Siliguri","Noto Sans Bengali",sans-serif';
+
+  const bg = ctx.createLinearGradient(0, 0, W, W);
+  bg.addColorStop(0, '#0b3d36'); bg.addColorStop(1, '#04211c');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, W);
+  if(postImageEl){
+    const r = Math.max(W / postImageEl.width, W / postImageEl.height);
+    const w = postImageEl.width * r, h = postImageEl.height * r;
+    ctx.drawImage(postImageEl, (W - w) / 2, (W - h) / 2, w, h);
+  }
+
+  const headline = postVal('postHeadline').trim();
+  const subline = postVal('postSubline').trim();
+  const price = document.getElementById('postShowPrice').checked ? postVal('postPrice').trim() : '';
+
+  if(postTemplate === 1){
+    const g = ctx.createLinearGradient(0, 520, 0, W);
+    g.addColorStop(0, 'rgba(2,26,23,0)'); g.addColorStop(0.55, 'rgba(2,26,23,0.82)'); g.addColorStop(1, 'rgba(2,26,23,0.96)');
+    ctx.fillStyle = g; ctx.fillRect(0, 520, W, W - 520);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#ffffff';
+    ctx.font = F(700, 84);
+    let y = 820;
+    wrapLines(ctx, headline, W - 200).slice(0, 2).forEach(l => { ctx.fillText(l, 70, y); y += 98; });
+    ctx.font = F(500, 44); ctx.fillStyle = '#9fe6d6';
+    wrapLines(ctx, subline, W - 260).slice(0, 2).forEach(l => { ctx.fillText(l, 70, y); y += 58; });
+    if(price) drawPill(ctx, price, W - 60, 60, 54, 'right');
+  } else if(postTemplate === 2){
+    ctx.fillStyle = 'rgba(2,26,23,0.86)'; ctx.fillRect(0, 700, W, 380);
+    ctx.fillStyle = '#18b89b'; ctx.fillRect(0, 700, W, 10);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#ffffff';
+    ctx.font = F(700, 76);
+    let y = 805;
+    wrapLines(ctx, headline, W - 160).slice(0, 2).forEach(l => { ctx.fillText(l, 70, y); y += 90; });
+    ctx.font = F(500, 42); ctx.fillStyle = '#9fe6d6';
+    wrapLines(ctx, subline, W - 400).slice(0, 2).forEach(l => { ctx.fillText(l, 70, y); y += 54; });
+    if(price) drawPill(ctx, price, W - 60, 960, 54, 'right');
+  } else {
+    const g = ctx.createLinearGradient(0, 0, 0, 460);
+    g.addColorStop(0, 'rgba(2,26,23,0.95)'); g.addColorStop(1, 'rgba(2,26,23,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, 460);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#ffffff';
+    ctx.font = F(700, 82);
+    let y = 150;
+    wrapLines(ctx, headline, W - 160).slice(0, 2).forEach(l => { ctx.fillText(l, W / 2, y); y += 96; });
+    ctx.font = F(500, 42); ctx.fillStyle = '#9fe6d6';
+    wrapLines(ctx, subline, W - 200).slice(0, 2).forEach(l => { ctx.fillText(l, W / 2, y); y += 54; });
+    if(price) drawPill(ctx, price, 60, 940, 58, 'left');
+  }
+
+  // লোগো (নিচের ডান কোণে)
+  try{
+    if(!postLogoEl) postLogoEl = await loadImageEl('icon-192.png');
+    const s = 120, x = W - s - 40, y = W - s - 40;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x + s / 2, y + s / 2, s / 2, 0, Math.PI * 2); ctx.clip();
+    ctx.drawImage(postLogoEl, x, y, s, s);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(x + s / 2, y + s / 2, s / 2, 0, Math.PI * 2); ctx.stroke();
+  }catch(e){}
+}
+
+async function confirmPost(){
+  const caption = postVal('postCaption').trim();
+  if(!caption){ toast('ক্যাপশন লিখুন'); return; }
+  const later = document.querySelector('input[name=postWhen]:checked').value === 'later';
+  let scheduledAt = null;
+  if(later){
+    const v = postVal('postWhenInput');
+    if(!v){ toast('সময় বেছে নিন'); return; }
+    scheduledAt = new Date(v).toISOString();
+  } else if(!confirm('এখনই পেজে পোস্ট করবেন?')){ return; }
+
+  const btn = document.getElementById('postConfirmBtn');
+  btn.disabled = true; btn.textContent = 'পাঠানো হচ্ছে...';
+  try{
+    await renderPostCanvas();
+    const c = document.getElementById('postCanvas');
+    const imageData = c.toDataURL('image/jpeg', 0.86);
+    const tc = document.createElement('canvas'); tc.width = 280; tc.height = 280;
+    tc.getContext('2d').drawImage(c, 0, 0, 280, 280);
+    const thumbData = tc.toDataURL('image/jpeg', 0.7);
+    await apiFetch('/posts', { method:'POST', body: JSON.stringify({
+      caption, imageData, thumbData, scheduledAt, productName: postDraft ? postDraft.productName : ''
+    }) });
+    toast(scheduledAt ? 'শিডিউল হয়েছে ✓ — ফেসবুক ঠিক সময়ে পোস্ট করবে' : 'পেজে পোস্ট হয়েছে ✓');
+    document.getElementById('postEditor').style.display = 'none';
+    postCustomImage = false; postImageEl = null;
+    const note = document.getElementById('postPickedNote'); if(note) note.textContent = '';
+    loadPosts();
+  }catch(e){
+    alert(e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '✅ নিশ্চিত করুন';
+  }
+}
+
+async function loadPosts(){
+  loadPostImageStrip();
+  const wrap = document.getElementById('postsList');
+  if(!wrap) return;
+  if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
+  if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
+  try{
+    const list = await apiFetch('/posts');
+    if(!list.length){ wrap.innerHTML = '<div class="empty">এখনো কোনো পোস্ট নেই</div>'; return; }
+    wrap.innerHTML = list.map(p => {
+      const when = p.scheduledAt ? new Date(p.scheduledAt).toLocaleString('bn-BD', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+      const badge = p.status === 'scheduled' ? `<span class="badge processing">নির্ধারিত · ${when}</span>`
+        : p.status === 'published' ? '<span class="badge delivered">পোস্ট হয়েছে</span>'
+        : '<span class="badge cancelled">ব্যর্থ</span>';
+      const err = p.status === 'failed' && p.error ? `<div class="t2" style="color:var(--coral); white-space:normal;">${escHtml(p.error)}</div>` : '';
+      return `
+      <div class="card row-card">
+        ${p.thumb ? `<img src="${p.thumb}" style="width:54px; height:54px; border-radius:10px; object-fit:cover; flex-shrink:0;">` : '<div class="row-avatar">📝</div>'}
+        <div class="row-main">
+          <div class="t1">${escHtml(p.productName || 'পোস্ট')}</div>
+          <div class="t2" style="white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escHtml(p.caption)}</div>
+          <div style="margin-top:4px;">${badge}</div>
+          ${err}
+        </div>
+        <button class="connect-btn off" style="background:var(--coral-soft); color:var(--coral); flex-shrink:0;" onclick="deletePost('${p.id}', '${p.status}')">${p.status === 'scheduled' ? 'বাতিল' : 'সরান'}</button>
+      </div>`;
+    }).join('');
+  }catch(e){ wrap.innerHTML = '<div class="empty">পোস্টের তালিকা লোড করা যায়নি</div>'; }
+}
+
+async function deletePost(id, status){
+  const msg = status === 'scheduled' ? 'নির্ধারিত পোস্টটা ফেসবুক থেকে বাতিল করবেন?' : 'তালিকা থেকে সরাবেন? (ফেসবুকে পোস্ট থাকবে)';
+  if(!confirm(msg)) return;
+  try{
+    await apiFetch('/posts/' + id, { method:'DELETE' });
+    toast(status === 'scheduled' ? 'বাতিল হয়েছে' : 'সরানো হয়েছে');
+    loadPosts();
+  }catch(e){ alert(e.message); }
+}
+
+
+/* ---------------- Settings: connect toggles ---------------- */
+const connMeta = {
+  fb:    {inputs:['fbToken'],               settingsKey:'fbToken',    label:'Facebook',     empty:'Access Token'},
+  wa:    {inputs:['waToken','waPhoneNumberId'], settingsKey:'waToken', label:'WhatsApp',     empty:'Access Token / Phone Number ID'},
+  sheet: {inputs:['sheetLink'],             settingsKey:'sheetLink',  label:'Google Sheet', empty:'শিট লিংক'},
+  ai:    {inputs:['aiKey', 'aiProvider'],   optional:['aiModel','aiBaseUrl'],   keyInput:'aiKey',  sfx:'',  settingsKey:'aiKey',  label:'প্রধান AI',    empty:'API Key'},
+  ai2:   {inputs:['aiKey2', 'aiProvider2'], optional:['aiModel2','aiBaseUrl2'], keyInput:'aiKey2', sfx:'2', settingsKey:'aiKey2', label:'ব্যাকআপ AI ১', empty:'ব্যাকআপ API Key'},
+  ai3:   {inputs:['aiKey3', 'aiProvider3'], optional:['aiModel3','aiBaseUrl3'], keyInput:'aiKey3', sfx:'3', settingsKey:'aiKey3', label:'ব্যাকআপ AI ২', empty:'API Key'}
+};
+
+async function toggleConnect(type){
+  const meta = connMeta[type];
+  const btn = document.getElementById(type+'Btn');
+  const txt = document.getElementById(type+'StatusText');
+  const isOn = btn.classList.contains('on');
+
+  if(!apiConnected()){
+    toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন');
+    return;
+  }
+  if(!isLoggedIn()){
+    toast('লগইন করুন প্রথমে');
+    openLoginOverlay();
+    return;
+  }
+
+  // নতুন কোনো ইনপুট বক্সে ভ্যালু বসানো আছে কিনা চেক করি
+  const hasNewValue = (meta.keyInput ? [meta.keyInput] : meta.inputs).some(inp => {
+    const el = document.getElementById(inp);
+    return el && el.value.trim();
+  });
+
+  // ইতিমধ্যে সংযুক্ত থাকা অবস্থায় বাটনে চাপ দিলে —
+  // ইনপুট বক্সে নতুন ভ্যালু থাকলে সেটা আপডেট করব, খালি থাকলে তখনই শুধু ডিসকানেক্ট করব
+  if(isOn && !hasNewValue){
+    const confirmDisconnect = confirm(meta.label + ' সংযোগ বিচ্ছিন্ন করতে চান?');
+    if(!confirmDisconnect) return;
+
+    const payload = {};
+    meta.inputs.concat(meta.optional || []).forEach(inp => payload[inp] = '');
+    try{
+      await apiFetch('/settings', { method:'POST', body: JSON.stringify(payload) });
+    }catch(e){ toast(e.message); return; }
+    btn.classList.remove('on'); btn.classList.add('off');
+    btn.textContent = (type==='fb' || type==='wa') ? 'ম্যানুয়াল' : 'Connect';
+    txt.textContent = 'সংযুক্ত নয়';
+    txt.style.color = 'var(--ink-dim)';
+    toast(meta.label + ' সংযোগ বিচ্ছিন্ন হয়েছে');
+  } else {
+    // নতুন কানেক্ট, অথবা আগে থেকে সংযুক্ত থাকলেও নতুন ভ্যালু দিয়ে আপডেট
+    const values = {};
+    let missing = false;
+    meta.inputs.forEach(inp => {
+      const el = document.getElementById(inp);
+      const val = el ? el.value.trim() : '';
+      if(!val) missing = true;
+      values[inp] = val;
+    });
+    if(missing){
+      toast('আগে ' + meta.empty + ' লিখুন');
+      return;
+    }
+    (meta.optional || []).forEach(inp => {
+      const el = document.getElementById(inp);
+      values[inp] = el ? el.value.trim() : '';
+    });
+    if(meta.sfx !== undefined && values['aiProvider' + meta.sfx] === 'custom'){
+      if(!values['aiBaseUrl' + meta.sfx] || !values['aiModel' + meta.sfx]){
+        toast('কাস্টম AI-র জন্য Base URL ও মডেলের নাম দুটোই লিখুন');
+        return;
+      }
+    }
+    let result;
+    try{
+      result = await apiFetch('/settings', { method:'POST', body: JSON.stringify(values) });
+    }catch(e){ toast(e.message); return; }
+
+    btn.classList.remove('off'); btn.classList.add('on');
+    btn.innerHTML = '● সংযুক্ত';
+    txt.textContent = 'সংযুক্ত আছে';
+    txt.style.color = 'var(--teal)';
+
+    // Google Sheet-এ স্থায়ীভাবে সেভ না হলে সতর্ক করি — নাহলে সার্ভার রিস্টার্ট/রিডিপ্লয় হলে পুরনো Key ফিরে আসবে
+    if(result && result.sheetSaved === false){
+      toast('⚠️ ' + meta.label + ' সেভ হয়েছে কিন্তু Google Sheet-এ স্থায়ীভাবে সেভ হয়নি — রিডিপ্লয় হলে হারাতে পারে');
+    } else {
+      toast(meta.label + ' সফলভাবে সংযুক্ত/আপডেট হয়েছে ✓');
+    }
+  }
+  updateSystemStatus();
+}
+
+async function loadSettingsStatus(){
+  if(!apiConnected() || !isLoggedIn()) return;
+  try{
+    const s = await apiFetch('/settings');
+    ['fb','wa','sheet','ai','ai2','ai3'].forEach(type=>{
+      const on = s.connected && s.connected[type];
+      const btn = document.getElementById(type+'Btn');
+      const txt = document.getElementById(type+'StatusText');
+      if(!btn) return;
+      if(on){
+        btn.classList.remove('off'); btn.classList.add('on');
+        btn.innerHTML = '● সংযুক্ত';
+        txt.textContent = 'সংযুক্ত আছে';
+        txt.style.color = 'var(--teal)';
+      } else {
+        btn.classList.remove('on'); btn.classList.add('off');
+        btn.textContent = (type==='fb' || type==='wa') ? 'ম্যানুয়াল' : 'Connect';
+        txt.textContent = 'সংযুক্ত নয়';
+        txt.style.color = 'var(--ink-dim)';
+      }
+    });
+    if(s.sheetLink) document.getElementById('sheetLink').value = s.sheetLink;
+    if(s.faqSheetLink) document.getElementById('faqSheetLink').value = s.faqSheetLink;
+    const storageEl = document.getElementById('sheetStorageStatus');
+    if(storageEl){
+      storageEl.textContent = s.sheetStorageConfigured ? '● স্থায়ীভাবে সংযুক্ত আছে' : '● এখনো Render-এ Environment ভ্যারিয়েবল বসানো হয়নি';
+      storageEl.style.color = s.sheetStorageConfigured ? 'var(--teal)' : 'var(--coral)';
+    }
+    ['', '2', '3'].forEach(sfx => {
+      const pe = document.getElementById('aiProvider' + sfx);
+      if(pe && s['aiProvider' + sfx]) pe.value = s['aiProvider' + sfx];
+      const me = document.getElementById('aiModel' + sfx); if(me) me.value = s['aiModel' + sfx] || '';
+      const be = document.getElementById('aiBaseUrl' + sfx); if(be) be.value = s['aiBaseUrl' + sfx] || '';
+      onAiProviderChange(sfx);
+    });
+    const pn = document.getElementById('postNotes'); if(pn && s.postNotes !== undefined) pn.value = s.postNotes || '';
+    if(s.fbAppId) document.getElementById('fbAppId').value = s.fbAppId;
+    if(s.waConfigId) document.getElementById('waConfigId').value = s.waConfigId;
+    if(s.waAppId) document.getElementById('waAppId').value = s.waAppId;
+    document.getElementById('aiAutoReplyToggle').checked = !!s.aiAutoReply;
+    updateSystemStatus();
+  }catch(e){ /* সার্ভার সাড়া না দিলে চুপচাপ রাখি */ }
+}
+
+function updateSystemStatus(){
+  const sheetOn = document.getElementById('sheetBtn').classList.contains('on');
+  const aiOn = document.getElementById('aiBtn').classList.contains('on');
+  const sheetSys = document.getElementById('sheetSysStatus');
+  const aiSys = document.getElementById('aiSysStatus');
+  sheetSys.textContent = sheetOn ? '● সচল' : '● নিষ্ক্রিয়';
+  sheetSys.style.color = sheetOn ? 'var(--teal)' : 'var(--coral)';
+  aiSys.textContent = aiOn ? '● সচল' : '● নিষ্ক্রিয়';
+  aiSys.style.color = aiOn ? 'var(--teal)' : 'var(--coral)';
+}
+
+/* ================= এই অ্যাপ থেকে জেনারেট হওয়া Webhook লিংক ================= */
+function populateWebhookLinks(){
+  const orderOut = document.getElementById('orderWebhookOut');
+  const aiOut = document.getElementById('aiWebhookOut');
+  if(!orderOut || !aiOut) return;
+  if(!apiConnected()){
+    orderOut.value = ''; aiOut.value = '';
+    return;
+  }
+  orderOut.value = API_BASE + '/webhook/order';
+  aiOut.value = API_BASE + '/webhook/ai-reply';
+}
+
+async function copyWebhook(inputId){
+  const input = document.getElementById(inputId);
+  if(!input.value){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  try{
+    await navigator.clipboard.writeText(input.value);
+  }catch(e){
+    input.select();
+    document.execCommand('copy');
+  }
+  toast('লিংক কপি হয়েছে ✓');
+}
+
+async function saveAutomationSettings(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  const payload = {
+    aiAutoReply: document.getElementById('aiAutoReplyToggle').checked,
+    faqSheetLink: document.getElementById('faqSheetLink').value.trim(),
+    waConfigId: document.getElementById('waConfigId').value.trim(),
+    waAppId: document.getElementById('waAppId').value.trim()
+  };
+  try{
+    await apiFetch('/settings', { method:'POST', body: JSON.stringify(payload) });
+  }catch(e){ toast(e.message); return; }
+  toast('সেটিংস সংরক্ষণ করা হয়েছে ✓');
+}
+
+/* ================= Facebook auto-connect ================= */
+let fbSdkReady = false;
+
+window.fbAsyncInit = function() {
+  fbSdkReady = true;
+};
+
+function ensureFbInit(){
+  const appId = document.getElementById('fbAppId').value.trim();
+  if(!appId){ toast('আগে উপরে Facebook App ID লিখুন'); return false; }
+  if(typeof FB === 'undefined'){ toast('Facebook SDK এখনো লোড হয়নি, একটু পর আবার চেষ্টা করুন'); return false; }
+  FB.init({ appId: appId, cookie: true, xfbml: false, version: 'v19.0' });
+  return true;
+}
+
+function autoConnectFacebook(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  if(!ensureFbInit()) return;
+
+  FB.login(function(response){
+    if(response.authResponse){
+      fetchPagesAndConnect(response.authResponse.accessToken);
+    } else {
+      toast('Facebook লগইন বাতিল করা হয়েছে');
+    }
+  }, { scope: 'pages_show_list,pages_manage_metadata,pages_messaging,pages_read_engagement,pages_manage_posts' });
+}
+
+function fetchPagesAndConnect(userToken){
+  FB.api('/me/accounts', { access_token: userToken }, async function(res){
+    if(!res || res.error){ toast('Facebook থেকে পেজ তালিকা আনা যায়নি'); return; }
+    if(!res.data || !res.data.length){ toast('এই অ্যাকাউন্টে কোনো ফেসবুক পেজ পাওয়া যায়নি'); return; }
+
+    let page = res.data[0];
+    if(res.data.length > 1){
+      const names = res.data.map((p,i)=> (i+1)+'. '+p.name).join('\n');
+      const choice = prompt('একাধিক পেজ পাওয়া গেছে, যেটি সংযুক্ত করতে চান তার নাম্বার লিখুন:\n'+names, '1');
+      const idx = parseInt(choice) - 1;
+      if(res.data[idx]) page = res.data[idx];
+    }
+
+    try{
+      await apiFetch('/settings/fb-auto', { method:'POST', body: JSON.stringify({
+        pageAccessToken: page.access_token,
+        pageId: page.id,
+        pageName: page.name,
+        fbAppId: document.getElementById('fbAppId').value.trim()
+      })});
+    }catch(e){ toast(e.message); return; }
+
+    document.getElementById('fbToken').value = '(অটোমেটিক সংযুক্ত: ' + page.name + ')';
+    const btn = document.getElementById('fbBtn');
+    const txt = document.getElementById('fbStatusText');
+    btn.classList.remove('off'); btn.classList.add('on');
+    btn.innerHTML = '● সংযুক্ত';
+    txt.textContent = 'সংযুক্ত আছে (' + page.name + ')';
+    txt.style.color = 'var(--teal)';
+    toast('Facebook পেজ "' + page.name + '" সফলভাবে সংযুক্ত হয়েছে ✓');
+    updateSystemStatus();
+  });
+}
+
+/* ================= WhatsApp Embedded Signup অটো-কানেক্ট ================= */
+let waSignupData = { phoneNumberId: '', wabaId: '' };
+
+window.addEventListener('message', function(event){
+  if (!event.origin.endsWith('facebook.com')) return;
+  try{
+    const data = JSON.parse(event.data);
+    if (data.type === 'WA_EMBEDDED_SIGNUP' && data.event === 'FINISH') {
+      waSignupData.phoneNumberId = data.data?.phone_number_id || '';
+      waSignupData.wabaId = data.data?.waba_id || '';
+    }
+  }catch(e){ /* WhatsApp-সংক্রান্ত না এমন মেসেজ হলে চুপচাপ উপেক্ষা করি */ }
+});
+
+function autoConnectWhatsApp(){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  const configId = document.getElementById('waConfigId').value.trim();
+  if(!configId){ toast('আগে WhatsApp Configuration ID লিখুন'); return; }
+  const waAppId = document.getElementById('waAppId').value.trim() || document.getElementById('fbAppId').value.trim();
+  if(!waAppId){ toast('আগে WhatsApp App ID অথবা Facebook App ID লিখুন'); return; }
+  if(typeof FB === 'undefined'){ toast('Facebook SDK এখনো লোড হয়নি, একটু পর আবার চেষ্টা করুন'); return; }
+  FB.init({ appId: waAppId, cookie: true, xfbml: false, version: 'v19.0' });
+
+  FB.login(function(response){
+    if(response.authResponse && response.authResponse.code){
+      finishWhatsAppConnect(response.authResponse.code, waAppId);
+    } else {
+      toast('WhatsApp সংযোগ বাতিল করা হয়েছে');
+    }
+  }, {
+    config_id: configId,
+    response_type: 'code',
+    override_default_response_type: true,
+    extras: { feature: 'whatsapp_embedded_signup', sessionInfoVersion: 3 }
+  });
+}
+
+async function finishWhatsAppConnect(code, waAppId){
+  try{
+    await apiFetch('/settings/wa-auto', { method:'POST', body: JSON.stringify({
+      code,
+      phoneNumberId: waSignupData.phoneNumberId,
+      wabaId: waSignupData.wabaId,
+      fbAppId: waAppId
+    })});
+  }catch(e){ toast(e.message); return; }
+
+  document.getElementById('waToken').value = '(অটোমেটিক সংযুক্ত)';
+  if (waSignupData.phoneNumberId) document.getElementById('waPhoneNumberId').value = waSignupData.phoneNumberId;
+  const btn = document.getElementById('waBtn');
+  const txt = document.getElementById('waStatusText');
+  btn.classList.remove('off'); btn.classList.add('on');
+  btn.innerHTML = '● সংযুক্ত';
+  txt.textContent = 'সংযুক্ত আছে';
+  txt.style.color = 'var(--teal)';
+  toast('WhatsApp সফলভাবে সংযুক্ত হয়েছে ✓');
+  updateSystemStatus();
+}
+
+/* ---------------- Filter chips ---------------- */
+document.getElementById('orderFilters').addEventListener('click', (e)=>{
+  const chip = e.target.closest('.chip');
+  if(!chip) return;
+  document.querySelectorAll('#orderFilters .chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  currentOrderFilter = chip.dataset.f;
+  renderOrders();
+});
+
+document.getElementById('bcastMsg').addEventListener('input', updateCharCount);
+
+/* ---------------- Init ---------------- */
+document.getElementById('apiBaseInput').value = API_BASE;
+
+async function autoConnect(){
+  const btn = document.getElementById('apiBtn');
+  const txt = document.getElementById('apiStatusText');
+  btn.textContent = 'যাচাই হচ্ছে...';
+  try{
+    const res = await fetch(API_BASE + '/ping');
+    if(!res.ok) throw new Error('bad response');
+    btn.classList.remove('off'); btn.classList.add('on');
+    btn.innerHTML = '● সংযুক্ত';
+    txt.textContent = 'সংযুক্ত আছে';
+    txt.style.color = 'var(--teal)';
+    populateWebhookLinks();
+    await loadEverything();
+  }catch(e){
+    API_BASE = ''; // সংযুক্ত হতে না পারলে খালি রাখি, নাহলে অন্য সব ফাংশন ভুল ধরে নেবে যে সংযুক্ত আছে
+    btn.textContent = 'Connect';
+    toast('সার্ভার ঘুমিয়ে থাকতে পারে — Connect বাটনে আবার চাপুন');
+  }
+  updateAuthUI();
+  if(!isLoggedIn()) openLoginOverlay();
+  renderRecentOrders();
+  renderOrders();
+  renderCustomers();
+  renderBroadcastHistory();
+  updateSystemStatus();
+}
+
+renderAiSlots();
+makeSettingsCollapsible();
+setGreeting();
+autoConnect();
+setInterval(function(){ if(!document.hidden) loadNotifCount(); }, 30000);
+
+</script>
+<script>
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+</script>
+</body>
+</html>
