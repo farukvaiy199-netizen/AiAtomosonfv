@@ -2414,8 +2414,8 @@ function autoConnectFacebookForPosts(){ autoConnectFacebook(true); }
 
 function fetchPagesAndConnect(userToken){
   FB.api('/me/accounts', { access_token: userToken }, async function(res){
-    if(!res || res.error){ toast('Facebook থেকে পেজ তালিকা আনা যায়নি'); return; }
-    if(!res.data || !res.data.length){ toast('এই অ্যাকাউন্টে কোনো ফেসবুক পেজ পাওয়া যায়নি'); return; }
+    if(!res || res.error){ alert('Facebook থেকে পেজ তালিকা আনা যায়নি' + (res && res.error && res.error.message ? ':\n' + res.error.message : '')); return; }
+    if(!res.data || !res.data.length){ alert('এই অ্যাকাউন্টে কোনো ফেসবুক পেজ পাওয়া যায়নি।\n\nসাধারণত কারণ: আগের অনুমতিতে পেজটা বাছা হয়নি। সমাধান:\n১) Facebook → Settings → Business integrations (বা Apps and websites) → এই অ্যাপটা খুঁজে Remove করুন\n২) তারপর এখানে আবার "Facebook দিয়ে অটো-কানেক্ট" চাপুন\n৩) Facebook-এর ডায়ালগে আপনার পেজটা টিক দিয়ে বেছে নিন এবং সব অনুমতি দিন'); return; }
 
     let page = res.data[0];
     if(res.data.length > 1){
