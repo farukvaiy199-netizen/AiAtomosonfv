@@ -623,6 +623,12 @@
         <input type="datetime-local" id="postWhenInput" class="token-input">
         <div class="hint">নির্ধারিত সময়ে ফেসবুক নিজেই পোস্ট করবে — তখন অ্যাপ বা সার্ভার জেগে থাকা লাগবে না। সময় এখন থেকে কমপক্ষে ১১ মিনিট ও সর্বোচ্চ ২৯ দিনের মধ্যে হতে হবে।</div>
         <button class="btn btn-primary" id="postConfirmBtn" onclick="confirmPost()">✅ নিশ্চিত করুন</button>
+        <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" style="margin:0; flex:1; padding:11px 6px;" onclick="copyPostCaption()">📋 ক্যাপশন কপি</button>
+          <button class="btn btn-ghost" style="margin:0; flex:1; padding:11px 6px;" onclick="downloadPostImage()">⬇️ ছবি সেভ</button>
+          <button class="btn btn-ghost" style="margin:0; flex:1; padding:11px 6px;" onclick="sharePostNative()">📤 শেয়ার</button>
+        </div>
+        <div class="hint">ফেসবুকের পোস্ট-অনুমতি ঠিক না হওয়া পর্যন্ত (বা যেকোনো সময়) এই তিন বাটন দিয়ে ছবি ও ক্যাপশন নিয়ে Facebook অ্যাপ বা Meta Business Suite-এ নিজে পোস্ট বা শিডিউল করতে পারেন।</div>
       </div>
 
       <div class="section-head"><h2>পোস্টের তালিকা</h2></div>
@@ -2148,6 +2154,35 @@ async function confirmPost(){
     alert(e.message);
   }finally{
     btn.disabled = false; btn.textContent = '✅ নিশ্চিত করুন';
+  }
+}
+
+async function copyPostCaption(){
+  const text = postVal('postCaption');
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){ const ta = document.getElementById('postCaption'); ta.select(); document.execCommand('copy'); }
+  toast('ক্যাপশন কপি হয়েছে ✓');
+}
+
+async function downloadPostImage(){
+  await renderPostCanvas();
+  const c = document.getElementById('postCanvas');
+  const a = document.createElement('a');
+  a.href = c.toDataURL('image/jpeg', 0.92);
+  a.download = 'post-' + Date.now() + '.jpg';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('ছবি ডাউনলোড হচ্ছে ✓');
+}
+
+async function sharePostNative(){
+  await renderPostCanvas();
+  const c = document.getElementById('postCanvas');
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+  const file = new File([blob], 'post.jpg', { type:'image/jpeg' });
+  if(navigator.canShare && navigator.canShare({ files:[file] })){
+    try{ await navigator.share({ files:[file], text: postVal('postCaption') }); }catch(e){}
+  } else {
+    toast('এই ফোনে সরাসরি শেয়ার চলছে না — "ছবি সেভ" চেপে নিন');
   }
 }
 
