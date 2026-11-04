@@ -1,7 +1,7 @@
 // SmartBiz PWA service worker
 // অ্যাপের নিজস্ব ফাইল ক্যাশ করে (ইন্টারনেট না থাকলেও ডিজাইন খুলবে) এবং পুশ নোটিফিকেশন গ্রহণ করে।
 // API কল (Render), Facebook SDK, ফন্ট ক্যাশ করা হয় না — অর্ডার/কাস্টমারের ডেটা সবসময় সরাসরি সার্ভার থেকে আসে।
-const CACHE = 'smartbiz-v4';
+const CACHE = 'smartbiz-v5';
 const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 
 self.addEventListener('install', (event) => {
