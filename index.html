@@ -1935,7 +1935,12 @@ async function detectInstagram(){
   if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
   try{
     const r = await apiFetch('/settings/ig-detect', { method:'POST', body:'{}' });
-    if(r.ok){ updateIgStatus(r.igUsername); toast('Instagram সংযুক্ত: @' + r.igUsername + ' ✓'); }
+    if(r.ok){
+      updateIgStatus(r.igUsername);
+      alert('Instagram সংযুক্ত: @' + r.igUsername + ' ✓\n\nপেজের মেসেজ-ওয়েবহুক সাবস্ক্রিপশন: '
+        + (r.subscriptionError ? ('যাচাই করা যায়নি (' + r.subscriptionError + ')') : (r.pageFields.length ? r.pageFields.join(', ') : 'কোনোটা নেই'))
+        + (r.subscriptionChanged ? '\n(messages ফিল্ড এইমাত্র যোগ করা হয়েছে)' : ''));
+    }
     else { updateIgStatus(''); alert(r.message || 'Instagram অ্যাকাউন্ট পাওয়া যায়নি'); }
   }catch(e){ alert(e.message); }
 }
