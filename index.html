@@ -711,8 +711,8 @@
       <div class="card conn-card" id="postEditor" style="display:none;">
         <div class="hint" id="postReason" style="margin:0 0 10px; color:var(--teal); font-weight:600;"></div>
         <div id="postVideoPanel" style="display:none;">
-          <video id="postVideoEl" controls playsinline preload="metadata" style="width:100%; max-height:420px; border-radius:14px; background:#000; display:block;"></video>
-          <div id="postVideoWarn" style="display:none; margin:8px 0; padding:10px 12px; border-radius:12px; background:#fff4e5; color:#8a5200; font-size:13px; line-height:1.5;">⚠️ এই ভিডিওটা ফোনের ব্রাউজারে চলছে না — সম্ভবত HEVC (H.265) ফরম্যাট। Facebook-এ হয়তো যাবে, কিন্তু Instagram রিলে সমস্যা হতে পারে। ফোনের ক্যামেরা সেটিংসে "High efficiency video" বন্ধ করে নতুন করে তুলুন, অথবা MP4 (H.264) ভিডিও দিন।</div>
+          <video id="postVideoEl" controls playsinline preload="metadata" style="display:block; margin:0 auto; width:auto; max-width:100%; height:auto; max-height:62vh; aspect-ratio:9/16; object-fit:contain; border-radius:16px; background:#000;"></video>
+          <div id="postVideoWarn" style="display:none; margin:8px 0; padding:10px 12px; border-radius:12px; background:#fff4e5; color:#8a5200; font-size:13px; line-height:1.5;">ℹ️ এই ফোনের ব্রাউজারে ভিডিওর প্রিভিউ চলছে না — তাতে সমস্যা নেই। আপলোডের পর সার্ভার নিজেই ভিডিওটা Facebook/Instagram-এর উপযোগী MP4-তে বদলে পোস্ট করবে (একটু বেশি সময় লাগতে পারে)। আলাদা করে কনভার্ট করার দরকার নেই।</div>
           <div class="vid-meta"><span id="postVideoInfo"></span><span class="vid-x" onclick="clearPostVideo()">✕ সরান</span></div>
           <div class="hint" style="margin:2px 0 10px;">ভিডিও Facebook পেজে ভিডিও হিসেবে এবং Instagram-এ রিল হিসেবে যাবে। MP4 হলে সবচেয়ে ভালো। বড় ভিডিও আপলোডে একটু সময় লাগে, শেষ না হওয়া পর্যন্ত পেজ খোলা রাখুন।</div>
         </div>
@@ -2488,7 +2488,11 @@ function pickPostVideo(evt){
   const v = document.getElementById('postVideoEl');
   const warn = document.getElementById('postVideoWarn'); if(warn) warn.style.display = 'none';
   v.onerror = () => { if(postVideoUrl && warn) warn.style.display = 'block'; };
-  v.onloadedmetadata = () => { if(warn) warn.style.display = 'none'; };
+  v.onloadedmetadata = () => {
+    if(warn) warn.style.display = 'none';
+    // লম্বা (রিল) ভিডিও হলে লম্বা ফ্রেম, আড়াআড়ি হলে চওড়া ফ্রেম
+    if(v.videoWidth && v.videoHeight){ v.style.aspectRatio = v.videoWidth + ' / ' + v.videoHeight; v.style.width = v.videoWidth > v.videoHeight ? '100%' : 'auto'; }
+  };
   v.src = postVideoUrl;
   document.getElementById('postVideoInfo').textContent = '🎬 ' + (file.name || 'ভিডিও') + ' · ' + (file.size / 1048576).toFixed(1) + ' MB';
   const note = document.getElementById('postPickedNote'); if(note) note.textContent = 'ভিডিও বাছা হয়েছে ✓';
@@ -2499,7 +2503,7 @@ function pickPostVideo(evt){
 
 function clearPostVideo(){
   const v = document.getElementById('postVideoEl');
-  if(v){ v.onerror = null; v.pause(); v.removeAttribute('src'); v.load(); }
+  if(v){ v.style.aspectRatio = '9 / 16'; v.style.width = 'auto'; v.onerror = null; v.pause(); v.removeAttribute('src'); v.load(); }
   const warn = document.getElementById('postVideoWarn'); if(warn) warn.style.display = 'none';
   if(postVideoUrl) URL.revokeObjectURL(postVideoUrl);
   postVideoFile = null; postVideoUrl = '';
