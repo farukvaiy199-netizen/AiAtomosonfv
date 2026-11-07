@@ -2489,9 +2489,16 @@ async function pickPostVideo(evt){
       await file.slice(0, 1024).arrayBuffer();
     }
   }catch(err){
+    // পুরোটা মেমরিতে কপি না হলেও (ফোনের মেমরি কম হলে এমন হয়) আসল ফাইল পড়া গেলে সেটাই ব্যবহার করি
+    let readable = false;
+    try{ await file.slice(0, 4096).arrayBuffer(); readable = file.size > 0; }catch(e2){}
+    if(readable){
+      toast('ভিডিও বাছা হয়েছে');
+    } else {
     evt.target.value = '';
-    alert('ফোন এই ভিডিও ফাইলটা পড়তে দিচ্ছে না।\n\nগ্যালারির "Recent"/ক্লাউড থেকে না নিয়ে ফাইলটা ফোনের Downloads বা Movies ফোল্ডারে কপি করে সেখান থেকে বাছুন। অথবা অন্য একটা ভিডিও দিয়ে দেখুন।');
+    alert('ফোন এই ভিডিও ফাইলটা পড়তে দিচ্ছে না। (' + (err && err.name || 'error') + ', ' + (file.size / 1048576).toFixed(1) + ' MB)\n\nগ্যালারির "Recent"/ক্লাউড থেকে না নিয়ে ফাইলটা ফোনের Downloads বা Movies ফোল্ডারে কপি করে সেখান থেকে বাছুন। অথবা অন্য একটা ভিডিও দিয়ে দেখুন।');
     return;
+    }
   }
   evt.target.value = '';
   const ed = document.getElementById('postEditor');
