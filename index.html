@@ -448,6 +448,13 @@
   .more-wide .mw-t{font-size:15.5px; font-weight:700;}
   .more-wide .mw-s{font-size:11.5px; color:rgba(255,255,255,0.82); margin-top:2px;}
   .more-wide .mw-chev{position:relative; z-index:1; opacity:.9;}
+
+  /* ===== পোস্টে ভিডিও ===== */
+  #postEditor.video-mode .img-only{display:none !important;}
+  .vid-meta{display:flex; justify-content:space-between; align-items:center; gap:10px; margin:10px 0 4px; font-size:12px; color:var(--ink-dim);}
+  .vid-meta span:first-child{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
+  .vid-x{flex-shrink:0; color:var(--coral); font-weight:700; cursor:pointer; padding:5px 11px; border-radius:20px; background:var(--coral-soft);}
+  .chip.vid{background:#fff1ea; color:#c4472f; border-color:rgba(240,120,90,0.35);}
 </style>
 </head>
 <body>
@@ -689,9 +696,10 @@
 
       <div class="card conn-card">
         <input type="text" id="postHint" class="token-input" placeholder="কোন প্রোডাক্ট বা থিম? (ফাঁকা রাখলে AI নিজে বেছে নেবে)" style="margin-bottom:8px;">
-        <div class="l" style="margin:2px 0 6px; font-size:12px; color:var(--ink-dim);">পোস্টের ছবি (ঐচ্ছিক — না দিলে AI সেই প্রোডাক্টের আপলোড করা ছবি বসাবে)</div>
+        <div class="l" style="margin:2px 0 6px; font-size:12px; color:var(--ink-dim);">পোস্টের ছবি বা ভিডিও (ঐচ্ছিক — ছবি না দিলে AI সেই প্রোডাক্টের আপলোড করা ছবি বসাবে)</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <label class="chip" style="cursor:pointer;">📷 গ্যালারি থেকে ছবি<input type="file" accept="image/*" style="display:none;" onchange="pickPostImage(event)"></label>
+          <label class="chip vid" style="cursor:pointer;">🎬 গ্যালারি থেকে ভিডিও<input type="file" accept="video/*" style="display:none;" onchange="pickPostVideo(event)"></label>
           <span id="postPickedNote" style="font-size:11.5px; color:var(--teal); font-weight:600;"></span>
         </div>
         <div id="postImgStrip" style="display:flex; gap:8px; overflow-x:auto; margin:10px 0;"></div>
@@ -702,16 +710,22 @@
 
       <div class="card conn-card" id="postEditor" style="display:none;">
         <div class="hint" id="postReason" style="margin:0 0 10px; color:var(--teal); font-weight:600;"></div>
-        <canvas id="postCanvas" style="width:100%; border-radius:14px; display:block; background:#04211c;"></canvas>
-        <div class="filter-chips" style="margin-top:10px;">
+        <div id="postVideoPanel" style="display:none;">
+          <video id="postVideoEl" controls playsinline preload="metadata" style="width:100%; max-height:420px; border-radius:14px; background:#000; display:block;"></video>
+          <div class="vid-meta"><span id="postVideoInfo"></span><span class="vid-x" onclick="clearPostVideo()">✕ সরান</span></div>
+          <div class="hint" style="margin:2px 0 10px;">ভিডিও Facebook পেজে ভিডিও হিসেবে এবং Instagram-এ রিল হিসেবে যাবে। MP4 হলে সবচেয়ে ভালো। বড় ভিডিও আপলোডে একটু সময় লাগে, শেষ না হওয়া পর্যন্ত পেজ খোলা রাখুন।</div>
+        </div>
+        <canvas id="postCanvas" class="img-only" style="width:100%; border-radius:14px; display:block; background:#04211c;"></canvas>
+        <div class="filter-chips img-only" style="margin-top:10px;">
           <div class="chip active" data-t="1" onclick="setPostTemplate(1)">ডিজাইন ১</div>
           <div class="chip" data-t="2" onclick="setPostTemplate(2)">ডিজাইন ২</div>
           <div class="chip" data-t="3" onclick="setPostTemplate(3)">ডিজাইন ৩</div>
           <label class="chip" style="cursor:pointer;">📷 নিজের ছবি<input type="file" accept="image/*" style="display:none;" onchange="pickPostImage(event)"></label>
+          <label class="chip vid" style="cursor:pointer;">🎬 ভিডিও<input type="file" accept="video/*" style="display:none;" onchange="pickPostVideo(event)"></label>
         </div>
-        <input type="text" id="postHeadline" class="token-input" placeholder="ছবির শিরোনাম" oninput="renderPostCanvas()" style="margin-bottom:8px;">
-        <input type="text" id="postSubline" class="token-input" placeholder="ছোট লাইন" oninput="renderPostCanvas()" style="margin-bottom:8px;">
-        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <input type="text" id="postHeadline" class="token-input img-only" placeholder="ছবির শিরোনাম" oninput="renderPostCanvas()" style="margin-bottom:8px;">
+        <input type="text" id="postSubline" class="token-input img-only" placeholder="ছোট লাইন" oninput="renderPostCanvas()" style="margin-bottom:8px;">
+        <div class="img-only" style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
           <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-dim); white-space:nowrap;"><input type="checkbox" id="postShowPrice" onchange="renderPostCanvas()" style="accent-color:var(--teal);"> দাম দেখান</label>
           <input type="text" id="postPrice" class="token-input" placeholder="যেমন ৳১০০০" oninput="renderPostCanvas()" style="margin:0;">
         </div>
@@ -730,7 +744,7 @@
         <button class="btn btn-primary" id="postConfirmBtn" onclick="confirmPost()">✅ নিশ্চিত করুন</button>
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
           <button class="btn btn-ghost" style="margin:0; flex:1; padding:11px 6px;" onclick="copyPostCaption()">📋 ক্যাপশন কপি</button>
-          <button class="btn btn-ghost" style="margin:0; flex:1; padding:11px 6px;" onclick="downloadPostImage()">⬇️ ছবি সেভ</button>
+          <button class="btn btn-ghost" style="margin:0; flex:1; padding:11px 6px;" id="postDlBtn" onclick="downloadPostImage()">⬇️ ছবি সেভ</button>
           <button class="btn btn-ghost" style="margin:0; flex:1; padding:11px 6px;" onclick="sharePostNative()">📤 শেয়ার</button>
         </div>
         <div class="hint">ফেসবুকের পোস্ট-অনুমতি ঠিক না হওয়া পর্যন্ত (বা যেকোনো সময়) এই তিন বাটন দিয়ে ছবি ও ক্যাপশন নিয়ে Facebook অ্যাপ বা Meta Business Suite-এ নিজে পোস্ট বা শিডিউল করতে পারেন।</div>
@@ -871,24 +885,6 @@
         </div>
       </div>
 
-      <div class="settings-group">ব্যবসার তথ্য</div>
-      <div class="card set-row">
-        <div class="l">ডেলিভারি চার্জ</div>
-        <input type="text" value="৳ ৭০ (ঢাকা), ৳ ১৩০ (বাইরে)">
-      </div>
-      <div class="card set-row">
-        <div class="l">সাপোর্ট নাম্বার</div>
-        <input type="text" value="01XXXXXXXXX">
-      </div>
-      <div class="card set-row">
-        <div class="l">ব্যবসার ঠিকানা</div>
-        <input type="text" value="ঢাকা, বাংলাদেশ">
-      </div>
-      <div class="card set-row">
-        <div class="l">Working Hours</div>
-        <input type="text" value="সকাল ৯টা – রাত ১০টা">
-      </div>
-
       <div class="settings-group">সিস্টেম স্ট্যাটাস</div>
       <div class="card set-row">
         <div class="l">Google Sheets সংযোগ</div>
@@ -986,7 +982,7 @@
         </div>
         <div class="mw-main">
           <div class="mw-t">সেটিংস</div>
-          <div class="mw-s">সংযোগ, AI Key, ব্যবসার তথ্য</div>
+          <div class="mw-s">সংযোগ, AI Key, Webhook</div>
         </div>
         <svg class="mw-chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
       </div>
@@ -2042,7 +2038,7 @@ function makeSettingsCollapsible(){
     groups.push(nodes);
     g.remove();
   });
-  if(groups.length < 9) return;
+  if(groups.length < 8) return;
 
   const home = document.createElement('div');
   home.id = 'setHome';
@@ -2057,10 +2053,9 @@ function makeSettingsCollapsible(){
     { title:'Google Sheet', sub:'ইনভেন্টরি ও FAQ শিট সংযোগ', icon:'sheet', tint:'#e1f5ea', color:'#0f8a6e', nodes:g[3], on:() => btnOn('sheetBtn'), cnt:true, save:true },
     { title:'AI ইঞ্জিন', sub:'প্রধান ও ব্যাকআপ API Key', icon:'ai', tint:'#ece8fd', color:'#6a5ae0', nodes:g[4], on:() => btnOn('aiBtn'), cnt:true },
     { title:'চ্যাট ও AI অটো-রিপ্লাই', sub:'অটো-রিপ্লাই চালু/বন্ধ, Webhook', icon:'chat', tint:'#dff1fb', color:'#2379b8', nodes:g[6], on:() => { const c = document.getElementById('aiAutoReplyToggle'); return !!(c && c.checked); }, onLabel:['চালু','বন্ধ'], save:true },
-    { head:'ব্যবসা ও টুলস', title:'ব্যবসার তথ্য', sub:'ডেলিভারি চার্জ, ঠিকানা, Working Hours', icon:'store', tint:'#fdf0d3', color:'#c98a12', nodes:g[7] },
-    { title:'Webhook ও সার্ভার', sub:'Server URL, অর্ডার ও AI রিপ্লাই লিংক', icon:'link', tint:'#e3eefb', color:'#2379b8', nodes:g[1].concat(g[5]), on:() => btnOn('apiBtn'), cnt:true },
+    { head:'টুলস ও সার্ভার', title:'Webhook ও সার্ভার', sub:'Server URL, অর্ডার ও AI রিপ্লাই লিংক', icon:'link', tint:'#e3eefb', color:'#2379b8', nodes:g[1].concat(g[5]), on:() => btnOn('apiBtn'), cnt:true },
     { head:'অ্যাকাউন্ট ও সিস্টেম', title:'অ্যাডমিন অ্যাকাউন্ট', sub:'লগইন / লগআউট', icon:'user', tint:'#e3f4ee', color:'#0f6b57', nodes:g[0], on:() => isLoggedIn(), onLabel:['লগইন আছে','লগইন নেই'] },
-    { title:'সিস্টেম স্ট্যাটাস', sub:'Sheets, AI ইঞ্জিন, Webhook', icon:'pulse', tint:'#f0eefb', color:'#6a5ae0', nodes:g[8] }
+    { title:'সিস্টেম স্ট্যাটাস', sub:'Sheets, AI ইঞ্জিন, Webhook', icon:'pulse', tint:'#f0eefb', color:'#6a5ae0', nodes:g[7] }
   ];
   refreshSettingsMenu();
 }
@@ -2241,6 +2236,7 @@ function pickPostImage(evt){
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
+      if(postVideoFile) clearPostVideo();
       postImageEl = img; postCustomImage = true;
       const note = document.getElementById('postPickedNote'); if(note) note.textContent = 'ছবি বাছা হয়েছে ✓';
       renderPostCanvas();
@@ -2263,6 +2259,7 @@ async function loadPostImageStrip(){
 }
 
 async function useStoredImage(url){
+  if(postVideoFile) clearPostVideo();
   try{
     postImageEl = await loadImageEl(url + '?c=' + Date.now());
     postCustomImage = true;
@@ -2437,6 +2434,7 @@ async function confirmPost(){
     scheduledAt = new Date(v).toISOString();
   } else if(!confirm('এখনই পেজে পোস্ট করবেন?')){ return; }
 
+  if(postVideoFile){ await submitVideoPost(caption, scheduledAt); return; }
   const btn = document.getElementById('postConfirmBtn');
   btn.disabled = true; btn.textContent = 'পাঠানো হচ্ছে...';
   try{
@@ -2462,6 +2460,128 @@ async function confirmPost(){
   }
 }
 
+/* ================= পোস্টে ভিডিও (গ্যালারি থেকে) ================= */
+let postVideoFile = null, postVideoUrl = '';
+
+function applyPostMediaMode(){
+  const ed = document.getElementById('postEditor');
+  const isV = !!postVideoFile;
+  if(ed) ed.classList.toggle('video-mode', isV);
+  const panel = document.getElementById('postVideoPanel');
+  if(panel) panel.style.display = isV ? 'block' : 'none';
+  const dl = document.getElementById('postDlBtn');
+  if(dl) dl.textContent = isV ? '⬇️ ভিডিও সেভ' : '⬇️ ছবি সেভ';
+}
+
+function pickPostVideo(evt){
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if(!file) return;
+  if(file.type && file.type.indexOf('video/') !== 0){ toast('ভিডিও ফাইল বেছে নিন'); return; }
+  if(file.size > 200 * 1024 * 1024){ toast('ভিডিও ২০০ MB-এর বেশি — ছোট ভিডিও দিন'); return; }
+  const ed = document.getElementById('postEditor');
+  if(ed.style.display === 'none') startManualPost();
+  if(postVideoUrl) URL.revokeObjectURL(postVideoUrl);
+  postVideoFile = file;
+  postVideoUrl = URL.createObjectURL(file);
+  const v = document.getElementById('postVideoEl');
+  v.src = postVideoUrl;
+  document.getElementById('postVideoInfo').textContent = '🎬 ' + (file.name || 'ভিডিও') + ' · ' + (file.size / 1048576).toFixed(1) + ' MB';
+  const note = document.getElementById('postPickedNote'); if(note) note.textContent = 'ভিডিও বাছা হয়েছে ✓';
+  applyPostMediaMode();
+  document.getElementById('postReason').textContent = '🎬 ভিডিও পোস্ট — ক্যাপশন লিখে সময় ঠিক করুন';
+  ed.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function clearPostVideo(){
+  const v = document.getElementById('postVideoEl');
+  if(v){ v.pause(); v.removeAttribute('src'); v.load(); }
+  if(postVideoUrl) URL.revokeObjectURL(postVideoUrl);
+  postVideoFile = null; postVideoUrl = '';
+  const note = document.getElementById('postPickedNote'); if(note) note.textContent = '';
+  applyPostMediaMode();
+}
+
+// ভিডিওর একটা ফ্রেম থেকে ছোট থাম্বনেইল (তালিকায় দেখানোর জন্য)
+function makeVideoThumb(){
+  return new Promise(resolve => {
+    try{
+      const v = document.createElement('video');
+      v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = postVideoUrl;
+      let finished = false;
+      const done = d => { if(!finished){ finished = true; resolve(d || ''); } };
+      const t = setTimeout(() => done(''), 6000);
+      v.onloadeddata = () => { try{ v.currentTime = Math.min(0.5, (v.duration || 1) / 2); }catch(e){ clearTimeout(t); done(''); } };
+      v.onseeked = () => {
+        clearTimeout(t);
+        try{
+          const c = document.createElement('canvas'); c.width = 280; c.height = 280;
+          const ctx = c.getContext('2d');
+          const r = Math.max(280 / v.videoWidth, 280 / v.videoHeight);
+          const w = v.videoWidth * r, h = v.videoHeight * r;
+          ctx.drawImage(v, (280 - w) / 2, (280 - h) / 2, w, h);
+          done(c.toDataURL('image/jpeg', 0.7));
+        }catch(e){ done(''); }
+      };
+      v.onerror = () => { clearTimeout(t); done(''); };
+    }catch(e){ resolve(''); }
+  });
+}
+
+function uploadPostVideo(fd, onProgress){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', API_BASE + '/posts/video');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + AUTH_TOKEN);
+    xhr.upload.onprogress = ev => { if(ev.lengthComputable) onProgress(Math.round(ev.loaded / ev.total * 100)); };
+    xhr.onload = () => {
+      let body = {};
+      try{ body = JSON.parse(xhr.responseText); }catch(e){}
+      if(xhr.status === 401){
+        AUTH_TOKEN = ''; localStorage.removeItem('sb_token'); updateAuthUI(); openLoginOverlay();
+        reject(new Error('সেশনের মেয়াদ শেষ, আবার লগইন করুন')); return;
+      }
+      if(xhr.status === 404 || xhr.status === 405){
+        reject(new Error('সার্ভারে ভিডিও আপলোডের নতুন অংশ এখনো চালু হয়নি (GitHub-এ নতুন ফাইল আপলোড করে Render-এ ডিপ্লয় হওয়া পর্যন্ত অপেক্ষা করুন)।\n\nএর মধ্যে "📤 শেয়ার" বাটনে ভিডিওটা সরাসরি Facebook বা Instagram অ্যাপে পাঠাতে পারেন।')); return;
+      }
+      if(xhr.status === 413){ reject(new Error('ভিডিওটা সার্ভারের জন্য অনেক বড় — ছোট করে চেষ্টা করুন')); return; }
+      if(xhr.status >= 200 && xhr.status < 300) resolve(body);
+      else reject(new Error(body.error || ('সার্ভার এরর: ' + xhr.status)));
+    };
+    xhr.onerror = () => reject(new Error('আপলোড ব্যর্থ — ইন্টারনেট বা সার্ভার সংযোগ দেখুন'));
+    xhr.ontimeout = () => reject(new Error('আপলোডে অনেক সময় লাগছে — আবার চেষ্টা করুন'));
+    xhr.send(fd);
+  });
+}
+
+async function submitVideoPost(caption, scheduledAt){
+  if(!apiConnected()){ toast('আগে Settings-এ ব্যাকএন্ড Server URL Connect করুন'); return; }
+  if(!isLoggedIn()){ toast('লগইন করুন প্রথমে'); openLoginOverlay(); return; }
+  const btn = document.getElementById('postConfirmBtn');
+  btn.disabled = true; btn.textContent = 'ভিডিও আপলোড হচ্ছে... 0%';
+  try{
+    const fd = new FormData();
+    fd.append('video', postVideoFile, postVideoFile.name || 'video.mp4');
+    fd.append('caption', caption);
+    if(scheduledAt) fd.append('scheduledAt', scheduledAt);
+    fd.append('productName', postDraft ? (postDraft.productName || '') : '');
+    const ig = document.getElementById('postToIg');
+    fd.append('postToInstagram', (ig && ig.checked && !ig.disabled) ? 'true' : 'false');
+    fd.append('postToFacebook', 'true');
+    const thumb = await makeVideoThumb();
+    if(thumb) fd.append('thumbData', thumb);
+    await uploadPostVideo(fd, pct => { btn.textContent = 'ভিডিও আপলোড হচ্ছে... ' + pct + '%'; });
+    toast(scheduledAt ? 'ভিডিও জমা হয়েছে ✓ — সার্ভার শিডিউল করছে, তালিকায় অবস্থা দেখুন' : 'ভিডিও জমা হয়েছে ✓ — পোস্ট হচ্ছে, তালিকায় অবস্থা দেখুন');
+    document.getElementById('postEditor').style.display = 'none';
+    clearPostVideo();
+    loadPosts();
+  }catch(e){
+    alert(e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '✅ নিশ্চিত করুন';
+  }
+}
+
 async function copyPostCaption(){
   const text = postVal('postCaption');
   try{ await navigator.clipboard.writeText(text); }
@@ -2470,6 +2590,13 @@ async function copyPostCaption(){
 }
 
 async function downloadPostImage(){
+  if(postVideoFile){
+    const a = document.createElement('a');
+    a.href = postVideoUrl; a.download = postVideoFile.name || ('video-' + Date.now() + '.mp4');
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('ভিডিও সেভ হচ্ছে ✓');
+    return;
+  }
   await renderPostCanvas();
   const c = document.getElementById('postCanvas');
   const a = document.createElement('a');
@@ -2480,6 +2607,14 @@ async function downloadPostImage(){
 }
 
 async function sharePostNative(){
+  if(postVideoFile){
+    if(navigator.canShare && navigator.canShare({ files:[postVideoFile] })){
+      try{ await navigator.share({ files:[postVideoFile], text: postVal('postCaption') }); }catch(e){}
+    } else {
+      toast('এই ফোনে সরাসরি শেয়ার চলছে না — "ভিডিও সেভ" চেপে নিন');
+    }
+    return;
+  }
   await renderPostCanvas();
   const c = document.getElementById('postCanvas');
   const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
@@ -2503,7 +2638,8 @@ async function loadPosts(){
     if(!list.length){ wrap.innerHTML = '<div class="empty">এখনো কোনো পোস্ট নেই</div>'; return; }
     wrap.innerHTML = list.map(p => {
       const when = p.scheduledAt ? new Date(p.scheduledAt).toLocaleString('bn-BD', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
-      const badge = p.status === 'scheduled' ? `<span class="badge processing">নির্ধারিত · ${when}</span>`
+      const badge = p.status === 'processing' ? '<span class="badge processing">⏳ আপলোড হচ্ছে...</span>'
+        : p.status === 'scheduled' ? `<span class="badge processing">নির্ধারিত · ${when}</span>`
         : p.status === 'published' ? '<span class="badge delivered">পোস্ট হয়েছে</span>'
         : '<span class="badge cancelled">ব্যর্থ</span>';
       const igBadge = p.igStatus === 'pending' ? '<span class="badge processing" style="margin-left:4px;">IG: নির্ধারিত</span>'
@@ -2516,7 +2652,7 @@ async function loadPosts(){
       <div class="card row-card">
         ${p.thumb ? `<img src="${p.thumb}" style="width:54px; height:54px; border-radius:10px; object-fit:cover; flex-shrink:0;">` : '<div class="row-avatar">📝</div>'}
         <div class="row-main">
-          <div class="t1">${escHtml(p.productName || 'পোস্ট')}</div>
+          <div class="t1">${(p.mediaType === 'video' || p.isVideo) ? '🎬 ' : ''}${escHtml(p.productName || 'পোস্ট')}</div>
           <div class="t2" style="white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escHtml(p.caption)}</div>
           <div style="margin-top:4px;">${badge}${igBadge}</div>
           ${err}${igErr}
@@ -2524,6 +2660,10 @@ async function loadPosts(){
         <button class="connect-btn off" style="background:var(--coral-soft); color:var(--coral); flex-shrink:0;" onclick="deletePost('${p.id}', '${p.status}')">${p.status === 'scheduled' ? 'বাতিল' : 'সরান'}</button>
       </div>`;
     }).join('');
+    // ভিডিও সার্ভারে ফেসবুক/Instagram-এ পাঠানো চলছে — শেষ না হওয়া পর্যন্ত নিজে থেকে অবস্থা হালনাগাদ হয়
+    if(list.some(p => p.status === 'processing')){
+      setTimeout(function(){ const sec = document.getElementById('posts'); if(sec && sec.classList.contains('active')) loadPosts(); }, 8000);
+    }
   }catch(e){ wrap.innerHTML = '<div class="empty">পোস্টের তালিকা লোড করা যায়নি</div>'; }
 }
 
