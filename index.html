@@ -2487,7 +2487,16 @@ function pickPostVideo(evt){
   postVideoUrl = URL.createObjectURL(file);
   const v = document.getElementById('postVideoEl');
   const warn = document.getElementById('postVideoWarn'); if(warn) warn.style.display = 'none';
-  v.onerror = () => { if(postVideoUrl && warn) warn.style.display = 'block'; };
+  v.onerror = () => {
+    if(!postVideoUrl || !warn) return;
+    const c = v.error ? v.error.code : '?';
+    const names = {1:'বাতিল',2:'নেটওয়ার্ক/ফাইল পড়া যায়নি',3:'ডিকোড হয়নি',4:'ফরম্যাট সাপোর্ট নেই'};
+    const h264 = v.canPlayType('video/mp4; codecs="avc1.42E01E"') || 'না';
+    const hevc = v.canPlayType('video/mp4; codecs="hvc1.1.6.L93.B0"') || 'না';
+    warn.innerHTML = 'ℹ️ এই ফোনের ব্রাউজারে ভিডিওর প্রিভিউ চলছে না। এটা শুধু প্রিভিউয়ের সমস্যা হতে পারে — আসল পরীক্ষা "নিশ্চিত করুন" চেপে পোস্ট করে দেখা। সার্ভার দরকার হলে নিজেই ভিডিও MP4-তে বদলে নেবে।' +
+      '<br><small style="opacity:.8">কারণ: কোড ' + c + ' (' + (names[c]||'অজানা') + ') · ফাইল টাইপ: ' + (postVideoFile && postVideoFile.type || 'অজানা') + ' · ব্রাউজার H.264: ' + h264 + ', HEVC: ' + hevc + '</small>';
+    warn.style.display = 'block';
+  };
   v.onloadedmetadata = () => {
     if(warn) warn.style.display = 'none';
     // লম্বা (রিল) ভিডিও হলে লম্বা ফ্রেম, আড়াআড়ি হলে চওড়া ফ্রেম
