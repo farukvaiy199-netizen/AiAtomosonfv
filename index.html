@@ -2474,12 +2474,26 @@ function applyPostMediaMode(){
   if(dl) dl.textContent = isV ? '⬇️ ভিডিও সেভ' : '⬇️ ছবি সেভ';
 }
 
-function pickPostVideo(evt){
-  const file = evt.target.files[0];
-  evt.target.value = '';
-  if(!file) return;
+async function pickPostVideo(evt){
+  let file = evt.target.files[0];
+  if(!file){ evt.target.value = ''; return; }
   if(file.type && file.type.indexOf('video/') !== 0){ toast('ভিডিও ফাইল বেছে নিন'); return; }
-  if(file.size > 200 * 1024 * 1024){ toast('ভিডিও ২০০ MB-এর বেশি — ছোট ভিডিও দিন'); return; }
+  if(file.size > 200 * 1024 * 1024){ toast('ভিডিও ২০০ MB-এর বেশি — ছোট ভিডিও দিন'); evt.target.value = ''; return; }
+  // ফোনের পিকারের ফাইল অনেক সময় পরে আর পড়া যায় না — তাই এখনই পুরোটা পড়ে মেমরিতে কপি করে নিই
+  try{
+    toast('ভিডিও পড়া হচ্ছে...');
+    if(file.size <= 120 * 1024 * 1024){
+      const buf = await file.arrayBuffer();
+      file = new File([buf], file.name || 'video.mp4', { type: file.type || 'video/mp4' });
+    }else{
+      await file.slice(0, 1024).arrayBuffer();
+    }
+  }catch(err){
+    evt.target.value = '';
+    alert('ফোন এই ভিডিও ফাইলটা পড়তে দিচ্ছে না।\n\nগ্যালারির "Recent"/ক্লাউড থেকে না নিয়ে ফাইলটা ফোনের Downloads বা Movies ফোল্ডারে কপি করে সেখান থেকে বাছুন। অথবা অন্য একটা ভিডিও দিয়ে দেখুন।');
+    return;
+  }
+  evt.target.value = '';
   const ed = document.getElementById('postEditor');
   if(ed.style.display === 'none') startManualPost();
   if(postVideoUrl) URL.revokeObjectURL(postVideoUrl);
@@ -2566,7 +2580,7 @@ function uploadPostVideo(fd, onProgress){
       if(xhr.status >= 200 && xhr.status < 300) resolve(body);
       else reject(new Error(body.error || ('সার্ভার এরর: ' + xhr.status)));
     };
-    xhr.onerror = () => reject(new Error('আপলোড ব্যর্থ — ইন্টারনেট বা সার্ভার সংযোগ দেখুন'));
+    xhr.onerror = () => reject(new Error('আপলোড ব্যর্থ — সার্ভারের সাথে সংযোগ হয়নি।\n\nদেখুন: (১) ইন্টারনেট আছে কিনা, (২) Render-এ সার্ভারের ডিপ্লয় "Live" কিনা (ফ্রি সার্ভার ঘুমিয়ে থাকলে ১ মিনিট অপেক্ষা করে আবার চাপুন)।'));
     xhr.ontimeout = () => reject(new Error('আপলোডে অনেক সময় লাগছে — আবার চেষ্টা করুন'));
     xhr.send(fd);
   });
@@ -2578,6 +2592,8 @@ async function submitVideoPost(caption, scheduledAt){
   const btn = document.getElementById('postConfirmBtn');
   btn.disabled = true; btn.textContent = 'ভিডিও আপলোড হচ্ছে... 0%';
   try{
+    try{ await postVideoFile.slice(0, 1024).arrayBuffer(); }
+    catch(e){ throw new Error('ফোন ভিডিও ফাইলটা পড়তে পারছে না — ভিডিওটা আবার বেছে নিন (Downloads/Movies ফোল্ডার থেকে)'); }
     const fd = new FormData();
     fd.append('video', postVideoFile, postVideoFile.name || 'video.mp4');
     fd.append('caption', caption);
