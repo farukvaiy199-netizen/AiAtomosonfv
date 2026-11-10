@@ -2036,7 +2036,7 @@ function onAiProviderChange(sfx){
 
 /* ================= ই-কমার্স ওয়েবসাইট সংযোগ (অ্যাডমিন প্যানেল API → AI) ================= */
 const SHOP_LS = 'sb_shop_cfg';
-let shopCfg = { url:'khanglobalshop', root:'bazaar_store/khanglobalshop_main', botEmail:'', hasBot:false, lowItems:[], outItems:[], orders:null, connected:false, show:{ products:true, stock:true, orders:true, messages:true, offers:true }, low:5, every:'live', counts:null, lastSync:'' };
+let shopCfg = { url:'khanglobalshop', root:'bazaar_store/khanglobalshop_main', site:'https://farukvaiy199-netizen.github.io/khanglobalshop/', botEmail:'', hasBot:false, lowItems:[], outItems:[], orders:null, connected:false, show:{ products:true, stock:true, orders:true, messages:true, offers:true }, low:5, every:'live', counts:null, lastSync:'' };
 try{ Object.assign(shopCfg, JSON.parse(localStorage.getItem(SHOP_LS) || '{}')); }catch(e){}
 function shopPersist(){ try{ const c = Object.assign({}, shopCfg); localStorage.setItem(SHOP_LS, JSON.stringify(c)); }catch(e){} }
 
@@ -2057,6 +2057,7 @@ function buildShopPanel(){
     + '<button class="connect-btn off" id="shopBtn" onclick="shopConnect()">Connect</button></div>'
     + '<label class="shop-lbl">Firebase Project ID</label><input type="text" id="shopUrl" class="token-input" placeholder="khanglobalshop" autocomplete="off" style="margin-bottom:8px;">'
     + '<label class="shop-lbl">Web API Key</label><input type="text" id="shopKey" class="token-input" placeholder="AIzaSy... (অ্যাডমিন প্যানেল → অটোমেশন API পেজে পাবেন)" autocomplete="off" style="margin-bottom:8px;">'
+    + '<label class="shop-lbl">ওয়েবসাইটের লিংক (AI কাস্টমারকে এই লিংক দেবে)</label><input type="text" id="shopSite" class="token-input" placeholder="https://..." autocomplete="off" style="margin-bottom:8px;">'
     + '<label class="shop-lbl">শপের রুট পাথ</label><input type="text" id="shopRoot" class="token-input" placeholder="bazaar_store/khanglobalshop_main" autocomplete="off" style="margin-bottom:12px;">'
     + '<div class="shop-sec" style="margin-top:4px;">বট অ্যাকাউন্ট <span style="font-weight:500;color:var(--ink-dim);font-size:11px;">(ঐচ্ছিক — অর্ডার ও চ্যাট দেখার জন্য)</span></div>'
     + '<input type="text" id="shopBotEmail" class="token-input" placeholder="বটের ইমেইল" autocomplete="off" style="margin-bottom:8px;">'
@@ -2083,6 +2084,7 @@ function shopReadForm(){
   const low = g('shopLow'); if(low) shopCfg.low = Math.max(1, parseInt(low.value, 10) || 5);
   const ev = g('shopEvery'); if(ev) shopCfg.every = ev.value;
   const u = g('shopUrl'); if(u) shopCfg.url = u.value.trim();
+  const st = g('shopSite'); if(st) shopCfg.site = st.value.trim();
   const rt = g('shopRoot'); if(rt) shopCfg.root = rt.value.trim() || 'bazaar_store/khanglobalshop_main';
   const be = g('shopBotEmail'); if(be) shopCfg.botEmail = be.value.trim();
 }
@@ -2095,6 +2097,7 @@ function shopRender(){
   if(g('shopLow')) g('shopLow').value = shopCfg.low || 5;
   if(g('shopEvery')) g('shopEvery').value = shopCfg.every || 'live';
   if(g('shopUrl') && !g('shopUrl').value) g('shopUrl').value = shopCfg.url || '';
+  if(g('shopSite') && !g('shopSite').value) g('shopSite').value = shopCfg.site || '';
   if(g('shopRoot') && !g('shopRoot').value) g('shopRoot').value = shopCfg.root || '';
   if(g('shopBotEmail') && !g('shopBotEmail').value) g('shopBotEmail').value = shopCfg.botEmail || '';
   const on = !!shopCfg.connected;
@@ -2152,7 +2155,7 @@ async function shopConnect(){
   if(shopCfg.botEmail && !botPass && !shopCfg.hasBot){ toast('বটের পাসওয়ার্ড দিন (বা বটের ইমেইল খালি রাখুন)'); return; }
   const b = document.getElementById('shopBtn'); b.textContent = 'যাচাই হচ্ছে...';
   try{
-    const r = await apiFetch('/shop/connect', { method:'POST', body: JSON.stringify({ projectId: shopCfg.url, apiKey: key.trim(), root: shopCfg.root, botEmail: shopCfg.botEmail, botPassword: botPass, show: shopCfg.show, low: shopCfg.low, every: shopCfg.every }) });
+    const r = await apiFetch('/shop/connect', { method:'POST', body: JSON.stringify({ projectId: shopCfg.url, apiKey: key.trim(), root: shopCfg.root, site: shopCfg.site, botEmail: shopCfg.botEmail, botPassword: botPass, show: shopCfg.show, low: shopCfg.low, every: shopCfg.every }) });
     shopCfg.connected = true;
     shopApplyStatus(r);
     if(!shopCfg.lastSync) shopCfg.lastSync = new Date().toLocaleTimeString('bn-BD', { hour:'2-digit', minute:'2-digit' });
