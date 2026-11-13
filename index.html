@@ -2104,6 +2104,7 @@ function buildAssistantPanel(){
 
     + '<div class="card conn-card"><label class="shop-row" style="margin:0 0 6px;"><span class="ic" style="background:#ffe9ee">💬</span><span class="tx"><b>কমেন্টে অটো-রিপ্লাই (Facebook ও Instagram)</b><small>দাম জানতে চাইলে পাবলিকে ছোট উত্তর + ইনবক্সে বিস্তারিত। অভিযোগ হলে আপনাকে জানাবে।</small></span><input type="checkbox" id="asstComment"></label>'
     + '<div class="hint">⚠️ ডিফল্টে বন্ধ। চালুর আগে পোস্টে একটা টেস্ট কমেন্ট করে দেখে নিন।</div>'
+    + '<button class="btn btn-ghost" style="margin-top:8px;" onclick="asstDiagnose()">🔍 কমেন্ট সিস্টেম পরীক্ষা করুন</button><div id="asstDiag" style="margin-top:8px;font-size:12px;line-height:1.7;"></div>'
     + '<div id="asstCmtLog" style="margin-top:8px;font-size:11.5px;line-height:1.6;color:var(--ink-dim);"></div></div>'
     + '<div class="shop-btns"><button class="btn btn-primary" onclick="asstSave()">সংরক্ষণ করুন</button></div>'
     + '<div class="hint" style="margin-top:10px;font-size:11px;color:var(--ink-dim);line-height:1.7;">📲 WhatsApp/Messenger থেকে ব্যবহারের নিয়ম: নম্বর সেভ করলে ওই নম্বর থেকে পাঠানো মেসেজ সরাসরি মালিক হিসেবে ধরা হবে। Messenger/Instagram থেকে চাইলে ওই চ্যাটে লিখুন <b>মালিক আপনার-PIN</b> — একবার লিখলেই চিনে নেবে।</div>';
@@ -2135,6 +2136,15 @@ async function asstSave(){
     g('asstPin').value = '';
     asstCfg = j; toast(j.subNote ? j.subNote : 'সংরক্ষণ হয়েছে ✓'); asstLoad(); refreshSettingsMenu();
   }catch(e){ if(e && e.message) toast(e.message); }
+}
+
+async function asstDiagnose(){
+  const el = document.getElementById('asstDiag');
+  el.textContent = 'পরীক্ষা চলছে...';
+  try{
+    const r = await apiFetch('/comments/diagnose');
+    el.innerHTML = r.map(x => (x.ok ? '✅ ' : '❌ ') + asstEsc(x.msg)).join('<br>');
+  }catch(e){ el.textContent = (e && e.message) || 'পরীক্ষা করা যায়নি'; }
 }
 
 function asstAdd(who, html){
