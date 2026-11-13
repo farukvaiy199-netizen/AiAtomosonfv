@@ -2078,6 +2078,102 @@ function buildShopPanel(){
   return d;
 }
 
+
+/* ================= মালিকের সহকারী (অ্যাপ-চ্যাট, WhatsApp/Messenger লিংক, কমেন্ট অটো-রিপ্লাই) ================= */
+let asstCfg = { waNumber:'', pinSet:false, linkedCount:0, commentAuto:'off' };
+let asstImage = '';
+function asstEsc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+
+function buildAssistantPanel(){
+  const d = document.createElement('div');
+  d.id = 'asstPanel';
+  d.innerHTML =
+    '<div class="card conn-card"><div class="conn-top"><div><div class="l">সহকারীর সাথে কথা বলুন</div><div class="r">বিক্রি, স্টক, অর্ডার জিজ্ঞেস করুন · পোস্ট বানাতে বলুন · নিয়ম শেখান</div></div></div>'
+    + '<div id="asstLog" style="max-height:260px;overflow:auto;background:#f6faf7;border-radius:12px;padding:8px;margin-bottom:8px;font-size:13px;line-height:1.6;"><div style="color:var(--ink-dim)">যেমন: "আজ কত বিক্রি হলো?" · "মধুর অফার নিয়ে একটা পোস্ট বানাও" · "ডেলিভারি চার্জ ৭০ টাকা — কাস্টমারকে বলবে"</div></div>'
+    + '<div id="asstImgPrev" style="display:none;margin-bottom:6px;font-size:12px;color:var(--ink-dim);">🖼️ ছবি যুক্ত আছে <a href="#" onclick="asstClearImg();return false;" style="margin-left:6px;">মুছুন</a></div>'
+    + '<div style="display:flex;gap:6px;"><input type="text" id="asstInput" class="token-input" placeholder="সহকারীকে বলুন..." autocomplete="off" style="margin:0;flex:1 1 0;min-width:0;width:auto;" onkeydown="if(event.key===\'Enter\')asstSend()">'
+    + '<button class="btn btn-ghost" style="margin:0;padding:0 12px;flex:none;width:auto;" onclick="document.getElementById(\'asstFile\').click()">📷</button>'
+    + '<button class="btn btn-primary" style="margin:0;padding:0 14px;flex:none;width:auto;" onclick="asstSend()">পাঠান</button></div>'
+    + '<input type="file" id="asstFile" accept="image/*" style="display:none" onchange="asstPickImg(this)"></div>'
+
+    + '<div class="card conn-card"><div class="l" style="margin-bottom:6px;">WhatsApp / Messenger থেকে ব্যবহার</div>'
+    + '<label class="shop-lbl">আপনার WhatsApp নম্বর (দেশের কোডসহ, যেমন 88017XXXXXXXX)</label><input type="text" id="asstWa" class="token-input" placeholder="8801XXXXXXXXX" autocomplete="off" style="margin-bottom:8px;">'
+    + '<label class="shop-lbl">গোপন PIN (কমপক্ষে ৪ অক্ষর)</label><input type="password" id="asstPin" class="token-input" placeholder="নতুন PIN দিন (খালি রাখলে আগেরটাই থাকবে)" autocomplete="new-password" style="margin-bottom:8px;">'
+    + '<div class="hint" id="asstHint"></div></div>'
+
+    + '<div class="card conn-card"><label class="shop-row" style="margin:0 0 6px;"><span class="ic" style="background:#ffe9ee">💬</span><span class="tx"><b>কমেন্টে অটো-রিপ্লাই (Facebook ও Instagram)</b><small>দাম জানতে চাইলে পাবলিকে ছোট উত্তর + ইনবক্সে বিস্তারিত। অভিযোগ হলে আপনাকে জানাবে।</small></span><input type="checkbox" id="asstComment"></label>'
+    + '<div class="hint">⚠️ ডিফল্টে বন্ধ। চালুর আগে পোস্টে একটা টেস্ট কমেন্ট করে দেখে নিন।</div></div>'
+    + '<div class="shop-btns"><button class="btn btn-primary" onclick="asstSave()">সংরক্ষণ করুন</button></div>'
+    + '<div class="hint" style="margin-top:10px;font-size:11px;color:var(--ink-dim);line-height:1.7;">📲 WhatsApp/Messenger থেকে ব্যবহারের নিয়ম: নম্বর সেভ করলে ওই নম্বর থেকে পাঠানো মেসেজ সরাসরি মালিক হিসেবে ধরা হবে। Messenger/Instagram থেকে চাইলে ওই চ্যাটে লিখুন <b>মালিক আপনার-PIN</b> — একবার লিখলেই চিনে নেবে।</div>';
+  return d;
+}
+
+async function asstLoad(){
+  try{
+    asstCfg = await apiFetch('/assistant/owner');
+    const g = id => document.getElementById(id);
+    if(g('asstWa')) g('asstWa').value = asstCfg.waNumber || '';
+    if(g('asstComment')) g('asstComment').checked = asstCfg.commentAuto === 'on';
+    if(g('asstHint')) g('asstHint').textContent = asstCfg.pinSet ? ('✅ PIN সেট আছে · বাঁধা অ্যাকাউন্ট: ' + asstCfg.linkedCount + 'টি') : 'এখনো PIN সেট করা হয়নি';
+  }catch(e){}
+}
+
+async function asstSave(){
+  const g = id => document.getElementById(id);
+  try{
+    const body = { waNumber: g('asstWa').value.trim(), commentAuto: g('asstComment').checked ? 'on' : 'off' };
+    const pin = g('asstPin').value;
+    if(pin) body.pin = pin;
+    const j = await apiFetch('/assistant/owner', { method:'POST', body: JSON.stringify(body) });
+    g('asstPin').value = '';
+    asstCfg = j; toast('সংরক্ষণ হয়েছে ✓'); asstLoad(); refreshSettingsMenu();
+  }catch(e){ if(e && e.message) toast(e.message); }
+}
+
+function asstAdd(who, html){
+  const log = document.getElementById('asstLog');
+  if(!log) return null;
+  if(log.dataset.started !== '1'){ log.innerHTML = ''; log.dataset.started = '1'; }
+  const m = document.createElement('div');
+  m.style.cssText = 'margin:4px 0;padding:7px 10px;border-radius:12px;max-width:92%;white-space:pre-wrap;' + (who === 'me' ? 'background:#dff3e6;margin-left:auto;' : 'background:#fff;border:1px solid rgba(0,0,0,.06);');
+  m.innerHTML = html;
+  log.appendChild(m); log.scrollTop = log.scrollHeight;
+  return m;
+}
+
+function asstPickImg(inp){
+  const f = inp.files && inp.files[0]; inp.value = '';
+  if(!f) return;
+  const img = new Image(), url = URL.createObjectURL(f);
+  img.onload = () => {
+    const sc = Math.min(1, 1280 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    asstImage = c.toDataURL('image/jpeg', 0.85); URL.revokeObjectURL(url);
+    document.getElementById('asstImgPrev').style.display = 'block';
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); toast('ছবিটা পড়া যায়নি'); };
+  img.src = url;
+}
+function asstClearImg(){ asstImage = ''; document.getElementById('asstImgPrev').style.display = 'none'; }
+
+async function asstSend(){
+  const inp = document.getElementById('asstInput');
+  const text = inp.value.trim();
+  if(!text && !asstImage) return;
+  asstAdd('me', asstEsc(text || '📷 ছবি') + (asstImage ? ' 🖼️' : ''));
+  const imageData = asstImage;
+  inp.value = ''; asstClearImg();
+  const wait = asstAdd('bot', '<span style="color:var(--ink-dim)">ভাবছি...</span>');
+  try{
+    const j = await apiFetch('/assistant/chat', { method:'POST', body: JSON.stringify({ message: text, imageData }) });
+    let h = asstEsc(j.reply || 'উত্তর পাইনি');
+    if(j.imageUrl) h += '<br><img src="' + asstEsc(j.imageUrl) + '" style="max-width:100%;border-radius:10px;margin-top:6px;">';
+    wait.innerHTML = h;
+  }catch(e){ if(wait) wait.textContent = (e && e.message) || 'সংযোগে সমস্যা — আবার চেষ্টা করুন'; }
+  const log = document.getElementById('asstLog'); if(log) log.scrollTop = log.scrollHeight;
+}
+
 function shopReadForm(){
   const g = id => document.getElementById(id);
   ['products','stock','orders','messages','offers'].forEach(k => { const c = g('shopShow_' + k); if(c) shopCfg.show[k] = c.checked; });
@@ -2195,6 +2291,7 @@ function sIcon(k){
     link: st('<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/>'),
     user: st('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
     pulse: st('<path d="M3 12h4l3-8 4 16 3-8h4"/>'),
+    bot: st('<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 16.5h6"/>'),
     cart: st('<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.3 11.2a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/>')
   };
   return m[k] || '';
@@ -2230,6 +2327,7 @@ function makeSettingsCollapsible(){
     { title:'WhatsApp Business', sub:'Cloud API, Embedded Signup', icon:'wa', tint:'#def6e8', color:'#128C7E', nodes:[g[2][1]], on:() => btnOn('waBtn'), cnt:true, save:true },
     { title:'Google Sheet', sub:'ইনভেন্টরি ও FAQ শিট সংযোগ', icon:'sheet', tint:'#e1f5ea', color:'#0f8a6e', nodes:g[3], on:() => btnOn('sheetBtn'), cnt:true, save:true },
     { title:'ই-কমার্স ওয়েবসাইট', sub:'অ্যাডমিন প্যানেল API, স্টক ও AI সিঙ্ক', icon:'cart', tint:'#fff0e0', color:'#e0731f', nodes:[buildShopPanel()], on:() => !!shopCfg.connected, cnt:true },
+    { title:'মালিকের সহকারী', sub:'অ্যাপ/WhatsApp/Messenger থেকে কথা বলুন, কমেন্ট অটো-রিপ্লাই', icon:'bot', tint:'#e9f7e4', color:'#2e8b3d', nodes:[buildAssistantPanel()], on:() => asstCfg.pinSet, cnt:true },
     { title:'AI ইঞ্জিন', sub:'প্রধান ও ব্যাকআপ API Key', icon:'ai', tint:'#ece8fd', color:'#6a5ae0', nodes:g[4], on:() => btnOn('aiBtn'), cnt:true },
     { title:'চ্যাট ও AI অটো-রিপ্লাই', sub:'অটো-রিপ্লাই চালু/বন্ধ, Webhook', icon:'chat', tint:'#dff1fb', color:'#2379b8', nodes:g[6], on:() => { const c = document.getElementById('aiAutoReplyToggle'); return !!(c && c.checked); }, onLabel:['চালু','বন্ধ'], save:true },
     { head:'টুলস ও সার্ভার', title:'Webhook ও সার্ভার', sub:'Server URL, অর্ডার ও AI রিপ্লাই লিংক', icon:'link', tint:'#e3eefb', color:'#2379b8', nodes:g[1].concat(g[5]), on:() => btnOn('apiBtn'), cnt:true },
@@ -2281,6 +2379,7 @@ function openSetDetail(i){
   const body = document.getElementById('setDetailBody');
   e.nodes.forEach(n => body.appendChild(n));
   if(e.icon === 'cart'){ shopRender(); shopLoadStatus(); }
+  if(e.icon === 'bot'){ asstLoad(); }
   document.getElementById('setDetailFoot').innerHTML = e.save
     ? '<button class="btn btn-primary" style="margin:0;" onclick="saveAutomationSettings()">সংরক্ষণ করুন</button>' : '';
   body.scrollTop = 0;
