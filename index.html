@@ -1933,6 +1933,7 @@ function renderBroadcastHistory(){
         <span style="color:var(--coral)">ব্যর্থ <b>${b.failed}</b></span>
         <span style="margin-left:auto; color:var(--ink-faint)">${b.date}</span>
       </div>
+      ${b.reasons && Object.keys(b.reasons).length ? '<div style="font-size:11.5px;color:var(--coral);margin-top:6px;line-height:1.6;">ব্যর্থের কারণ: ' + Object.entries(b.reasons).map(([k,v]) => escHtml(k) + ' (' + v + ')').join(' · ') + '</div>' : ''}
     </div>
   `).join('');
 }
@@ -1949,7 +1950,7 @@ async function sendBroadcast(){
   el.value = '';
   updateCharCount();
   renderBroadcastHistory();
-  toast('ব্রডকাস্ট সফলভাবে পাঠানো হয়েছে ✓');
+  toast(record.failed ? ('সফল ' + record.success + ', ব্যর্থ ' + record.failed + ' — কারণ নিচে দেখুন') : 'ব্রডকাস্ট সফলভাবে পাঠানো হয়েছে ✓');
 }
 
 function updateCharCount(){
