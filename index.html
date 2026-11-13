@@ -2102,7 +2102,8 @@ function buildAssistantPanel(){
     + '<div class="hint" id="asstHint"></div></div>'
 
     + '<div class="card conn-card"><label class="shop-row" style="margin:0 0 6px;"><span class="ic" style="background:#ffe9ee">💬</span><span class="tx"><b>কমেন্টে অটো-রিপ্লাই (Facebook ও Instagram)</b><small>দাম জানতে চাইলে পাবলিকে ছোট উত্তর + ইনবক্সে বিস্তারিত। অভিযোগ হলে আপনাকে জানাবে।</small></span><input type="checkbox" id="asstComment"></label>'
-    + '<div class="hint">⚠️ ডিফল্টে বন্ধ। চালুর আগে পোস্টে একটা টেস্ট কমেন্ট করে দেখে নিন।</div></div>'
+    + '<div class="hint">⚠️ ডিফল্টে বন্ধ। চালুর আগে পোস্টে একটা টেস্ট কমেন্ট করে দেখে নিন।</div>'
+    + '<div id="asstCmtLog" style="margin-top:8px;font-size:11.5px;line-height:1.6;color:var(--ink-dim);"></div></div>'
     + '<div class="shop-btns"><button class="btn btn-primary" onclick="asstSave()">সংরক্ষণ করুন</button></div>'
     + '<div class="hint" style="margin-top:10px;font-size:11px;color:var(--ink-dim);line-height:1.7;">📲 WhatsApp/Messenger থেকে ব্যবহারের নিয়ম: নম্বর সেভ করলে ওই নম্বর থেকে পাঠানো মেসেজ সরাসরি মালিক হিসেবে ধরা হবে। Messenger/Instagram থেকে চাইলে ওই চ্যাটে লিখুন <b>মালিক আপনার-PIN</b> — একবার লিখলেই চিনে নেবে।</div>';
   return d;
@@ -2114,6 +2115,11 @@ async function asstLoad(){
     const g = id => document.getElementById(id);
     if(g('asstWa')) g('asstWa').value = asstCfg.waNumber || '';
     if(g('asstComment')) g('asstComment').checked = asstCfg.commentAuto === 'on';
+    try{
+      const rc = await apiFetch('/comments/recent');
+      const el = g('asstCmtLog');
+      if(el) el.innerHTML = rc.length ? '<b>সর্বশেষ কমেন্ট:</b><br>' + rc.slice(0,6).map(c => (c.platform==='facebook'?'FB':'IG') + ' · ' + asstEsc(c.intent||'-') + ' · পাবলিক:' + (c.pub||'—') + ' ইনবক্স:' + (c.priv||'—') + (c.note ? ' ⚠️ ' + asstEsc(c.note) : '')).join('<br>') : 'এখনো কোনো কমেন্টে সাড়া দেওয়া হয়নি';
+    }catch(e){}
     if(g('asstHint')) g('asstHint').textContent = asstCfg.pinSet ? ('✅ PIN সেট আছে · বাঁধা অ্যাকাউন্ট: ' + asstCfg.linkedCount + 'টি') : 'এখনো PIN সেট করা হয়নি';
   }catch(e){}
 }
@@ -2126,7 +2132,7 @@ async function asstSave(){
     if(pin) body.pin = pin;
     const j = await apiFetch('/assistant/owner', { method:'POST', body: JSON.stringify(body) });
     g('asstPin').value = '';
-    asstCfg = j; toast('সংরক্ষণ হয়েছে ✓'); asstLoad(); refreshSettingsMenu();
+    asstCfg = j; toast(j.subNote ? j.subNote : 'সংরক্ষণ হয়েছে ✓'); asstLoad(); refreshSettingsMenu();
   }catch(e){ if(e && e.message) toast(e.message); }
 }
 
