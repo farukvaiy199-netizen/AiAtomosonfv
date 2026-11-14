@@ -2122,6 +2122,7 @@ async function asstLoad(){
       const el = g('asstCmtLog');
       if(el) el.innerHTML = rc.length ? '<b>সর্বশেষ কমেন্ট:</b><br>' + rc.slice(0,6).map(c => (c.platform==='facebook'?'FB':'IG') + ' · ' + asstEsc(c.intent||'-') + ' · পাবলিক:' + (c.pub||'—') + ' ইনবক্স:' + (c.priv||'—') + (c.note ? ' ⚠️ ' + asstEsc(c.note) : '')).join('<br>') : 'এখনো কোনো কমেন্টে সাড়া দেওয়া হয়নি';
     }catch(e){}
+    try{ refreshSettingsMenu(); }catch(e){}
     if(g('asstHint')) g('asstHint').textContent = asstCfg.pinSet ? ('✅ PIN সেট আছে · বাঁধা অ্যাকাউন্ট: ' + asstCfg.linkedCount + 'টি') : 'এখনো PIN সেট করা হয়নি';
   }catch(e){}
 }
@@ -2344,7 +2345,7 @@ function makeSettingsCollapsible(){
     { title:'WhatsApp Business', sub:'Cloud API, Embedded Signup', icon:'wa', tint:'#def6e8', color:'#128C7E', nodes:[g[2][1]], on:() => btnOn('waBtn'), cnt:true, save:true },
     { title:'Google Sheet', sub:'ইনভেন্টরি ও FAQ শিট সংযোগ', icon:'sheet', tint:'#e1f5ea', color:'#0f8a6e', nodes:g[3], on:() => btnOn('sheetBtn'), cnt:true, save:true },
     { title:'ই-কমার্স ওয়েবসাইট', sub:'অ্যাডমিন প্যানেল API, স্টক ও AI সিঙ্ক', icon:'cart', tint:'#fff0e0', color:'#e0731f', nodes:[buildShopPanel()], on:() => !!shopCfg.connected, cnt:true },
-    { title:'মালিকের সহকারী', sub:'অ্যাপ/WhatsApp/Messenger থেকে কথা বলুন, কমেন্ট অটো-রিপ্লাই', icon:'bot', tint:'#e9f7e4', color:'#2e8b3d', nodes:[buildAssistantPanel()], on:() => asstCfg.pinSet, cnt:true },
+    { title:'মালিকের সহকারী', sub:'অ্যাপ/WhatsApp/Messenger থেকে কথা বলুন, কমেন্ট অটো-রিপ্লাই', icon:'bot', tint:'#e9f7e4', color:'#2e8b3d', nodes:[buildAssistantPanel()], on:() => !!(asstCfg.pinSet || asstCfg.commentAuto === 'on'), cnt:true },
     { title:'AI ইঞ্জিন', sub:'প্রধান ও ব্যাকআপ API Key', icon:'ai', tint:'#ece8fd', color:'#6a5ae0', nodes:g[4], on:() => btnOn('aiBtn'), cnt:true },
     { title:'চ্যাট ও AI অটো-রিপ্লাই', sub:'অটো-রিপ্লাই চালু/বন্ধ, Webhook', icon:'chat', tint:'#dff1fb', color:'#2379b8', nodes:g[6], on:() => { const c = document.getElementById('aiAutoReplyToggle'); return !!(c && c.checked); }, onLabel:['চালু','বন্ধ'], save:true },
     { head:'টুলস ও সার্ভার', title:'Webhook ও সার্ভার', sub:'Server URL, অর্ডার ও AI রিপ্লাই লিংক', icon:'link', tint:'#e3eefb', color:'#2379b8', nodes:g[1].concat(g[5]), on:() => btnOn('apiBtn'), cnt:true },
@@ -2352,6 +2353,7 @@ function makeSettingsCollapsible(){
     { title:'সিস্টেম স্ট্যাটাস', sub:'Sheets, AI ইঞ্জিন, Webhook', icon:'pulse', tint:'#f0eefb', color:'#6a5ae0', nodes:g[7] }
   ];
   refreshSettingsMenu();
+  try{ if(apiConnected() && isLoggedIn()) asstLoad(); }catch(e){}
 }
 
 function refreshSettingsMenu(){
