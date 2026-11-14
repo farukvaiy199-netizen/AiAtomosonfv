@@ -2112,6 +2112,7 @@ function buildTiktokPanel(){
     + '<label class="shop-lbl">Client Secret</label><input type="password" id="tkSecret" class="token-input" placeholder="Client Secret (সংরক্ষিত থাকলে খালি রাখুন)" autocomplete="new-password" style="margin-bottom:8px;">'
     + '<div class="shop-btns" style="gap:6px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="tkSaveKeys()">কী সংরক্ষণ</button><button class="btn btn-ghost" onclick="tkConnect()">TikTok অ্যাকাউন্ট যুক্ত করুন</button><button class="btn btn-ghost" onclick="tkDisconnect()">বিচ্ছিন্ন</button></div>'
     + '<label class="shop-row" style="margin:8px 0 6px;"><span class="ic" style="background:#fde8f1">🎵</span><span class="tx"><b>পোস্ট করলে TikTok-এও যাক</b><small>শুধু ছবির পোস্ট (ভিডিও এখনো নয়)</small></span><input type="checkbox" id="tkAuto" checked onchange="tkAutoSave(this.checked)"></label>'
+    + '<label class="shop-row" style="margin:0 0 8px;"><span class="ic" style="background:#eaf6ee">🌐</span><span class="tx"><b>TikTok অডিট পাস হয়েছে</b><small>টিক দিলে পোস্ট সবার জন্য পাবলিক হবে। না দিলে "শুধু আমি" (Sandbox/অডিটের আগে এটাই লাগবে)</small></span><input type="checkbox" id="tkAudited" onchange="tkAuditedSave(this.checked)"></label>'
     + '<div class="hint" style="font-size:11px;line-height:1.7;">TikTok পোর্টালে এই ঠিকানাটা Redirect URI হিসেবে দিন:<br><b id="tkRedirect" style="word-break:break-all;user-select:all;">—</b></div>'
     + '<div style="font-weight:700;font-size:13px;margin:12px 0 4px;">২) ছবির ডোমেইন যাচাই (TikTok চাইলে)</div>'
     + '<div class="hint" style="font-size:11px;line-height:1.7;margin-bottom:6px;">TikTok পোস্টের ছবি আপনার সার্ভার থেকে নেয়, তাই পোর্টাল ফাইলের নাম ও লেখা দিলে সেটা এখানে বসান।</div>'
@@ -2211,6 +2212,7 @@ async function tkLoad(){
     if(!g('tkStatus')) return;
     g('tkRedirect').textContent = r.redirectUri; g('tkHook').textContent = r.webhookUrl;
     g('tkAuto').checked = r.autoPost !== false;
+    if(g('tkAudited')) g('tkAudited').checked = !!r.audited;
     if(r.verifyName) g('tkVName').value = r.verifyName;
     if(r.sendUrl) g('tkSendUrl').value = r.sendUrl;
     const lines = [];
@@ -2235,6 +2237,7 @@ async function tkSaveMsg(){
   const ok = await tkPost({ tkMsgToken: g('tkMsgTok').value, tkMsgBusinessId: g('tkBizId').value, tkSendUrl: g('tkSendUrl').value });
   if(ok) g('tkMsgTok').value = '';
 }
+async function tkAuditedSave(on){ try{ await apiFetch('/tiktok/config', { method:'POST', body: JSON.stringify({ audited: on }) }); toast(on ? 'এখন থেকে পোস্ট পাবলিক হবে' : 'পোস্ট "শুধু আমি" মোডে যাবে'); }catch(e){ if(e && e.message) toast(e.message); } }
 async function tkAutoSave(on){ try{ await apiFetch('/tiktok/config', { method:'POST', body: JSON.stringify({ autoPost: on }) }); }catch(e){} }
 async function tkConnect(){
   try{ const j = await apiFetch('/tiktok/auth-url'); window.open(j.url, '_blank'); toast('TikTok-এ অনুমতি দিয়ে ফিরে এসে অবস্থা দেখুন'); setTimeout(tkLoad, 15000); }
