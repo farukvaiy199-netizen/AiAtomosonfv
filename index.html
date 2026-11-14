@@ -2085,6 +2085,48 @@ let asstCfg = { waNumber:'', pinSet:false, linkedCount:0, commentAuto:'off' };
 let asstImage = '';
 function asstEsc(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
 
+function buildTelegramPanel(){
+  const d = document.createElement('div');
+  d.id = 'tgPanel';
+  d.innerHTML =
+    '<div class="card conn-card" id="tgCard"><div class="l" style="margin-bottom:4px;">✈️ Telegram বট ও চ্যানেল</div>'
+    + '<div class="hint" style="margin-bottom:8px;">কাস্টমার বটে মেসেজ দিলে AI উত্তর দেবে। পোস্ট করলে আপনার চ্যানেলেও যাবে।</div>'
+    + '<div id="tgStatus" style="font-size:12px;line-height:1.7;margin-bottom:8px;"></div>'
+    + '<label class="shop-lbl">বটের টোকেন (@BotFather থেকে)</label><input type="password" id="tgToken" class="token-input" placeholder="নতুন টোকেন পেস্ট করুন (সংযুক্ত থাকলে খালি রাখুন)" autocomplete="new-password" style="margin-bottom:8px;">'
+    + '<label class="shop-lbl">চ্যানেলের নাম (ঐচ্ছিক, যেমন @khanglobalshop)</label><input type="text" id="tgChannel" class="token-input" placeholder="@আপনার_চ্যানেল" autocomplete="off" style="margin-bottom:8px;">'
+    + '<label class="shop-row" style="margin:0 0 6px;"><span class="ic" style="background:#e4f1ff">📣</span><span class="tx"><b>পোস্ট করলে চ্যানেলেও যাক</b><small>ছবির পোস্ট ও শিডিউল করা পোস্ট — দুটোই</small></span><input type="checkbox" id="tgAuto" checked onchange="tgAutoSave(this.checked)"></label>'
+    + '<div class="shop-btns" style="gap:6px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="tgConnect()">সংযুক্ত করুন</button><button class="btn btn-ghost" onclick="tgTest()">টেস্ট পোস্ট</button><button class="btn btn-ghost" onclick="tgDisconnect()">বিচ্ছিন্ন</button></div>'
+    + '<div class="hint" style="margin-top:8px;font-size:11px;line-height:1.7;">ধাপ: ১) Telegram-এ @BotFather → /newbot → টোকেন নিন। ২) নিজের চ্যানেল খুলে বটকে Admin বানান (Post messages অনুমতিসহ)। ৩) এখানে টোকেন ও চ্যানেলের নাম দিয়ে "সংযুক্ত করুন"। ৪) বটে গিয়ে লিখুন <b>/link আপনার-PIN</b> — তাহলে বটেই সহকারীর সাথে কথা বলতে পারবেন। ⚠️ টোকেন কাউকে বা স্ক্রিনশটে দেখাবেন না।</div></div>';
+  return d;
+}
+
+function buildTiktokPanel(){
+  const d = document.createElement('div');
+  d.id = 'tkPanel';
+  d.innerHTML =
+    '<div class="card conn-card" id="tkCard"><div class="l" style="margin-bottom:4px;">🎵 TikTok (পোস্ট ও মেসেজ)</div>'
+    + '<div class="hint" style="margin-bottom:8px;">TikTok-এর API অনুমোদন পেলে শুধু নিচের ঘরগুলোতে কী বসালেই চালু। ছবির পোস্ট ও ইনবক্সের AI-উত্তর দুটোই।</div>'
+    + '<div id="tkStatus" style="font-size:12px;line-height:1.7;margin-bottom:8px;"></div>'
+    + '<div style="font-weight:700;font-size:13px;margin:4px 0;">১) পোস্ট করার জন্য (Login Kit + Content Posting)</div>'
+    + '<label class="shop-lbl">Client Key</label><input type="text" id="tkKey" class="token-input" placeholder="TikTok Developer অ্যাপের Client Key" autocomplete="off" style="margin-bottom:8px;">'
+    + '<label class="shop-lbl">Client Secret</label><input type="password" id="tkSecret" class="token-input" placeholder="Client Secret (সংরক্ষিত থাকলে খালি রাখুন)" autocomplete="new-password" style="margin-bottom:8px;">'
+    + '<div class="shop-btns" style="gap:6px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="tkSaveKeys()">কী সংরক্ষণ</button><button class="btn btn-ghost" onclick="tkConnect()">TikTok অ্যাকাউন্ট যুক্ত করুন</button><button class="btn btn-ghost" onclick="tkDisconnect()">বিচ্ছিন্ন</button></div>'
+    + '<label class="shop-row" style="margin:8px 0 6px;"><span class="ic" style="background:#fde8f1">🎵</span><span class="tx"><b>পোস্ট করলে TikTok-এও যাক</b><small>শুধু ছবির পোস্ট (ভিডিও এখনো নয়)</small></span><input type="checkbox" id="tkAuto" checked onchange="tkAutoSave(this.checked)"></label>'
+    + '<div class="hint" style="font-size:11px;line-height:1.7;">TikTok পোর্টালে এই ঠিকানাটা Redirect URI হিসেবে দিন:<br><b id="tkRedirect" style="word-break:break-all;user-select:all;">—</b></div>'
+    + '<div style="font-weight:700;font-size:13px;margin:12px 0 4px;">২) ছবির ডোমেইন যাচাই (TikTok চাইলে)</div>'
+    + '<div class="hint" style="font-size:11px;line-height:1.7;margin-bottom:6px;">TikTok পোস্টের ছবি আপনার সার্ভার থেকে নেয়, তাই পোর্টাল ফাইলের নাম ও লেখা দিলে সেটা এখানে বসান।</div>'
+    + '<input type="text" id="tkVName" class="token-input" placeholder="ফাইলের নাম (যেমন tiktokABC123.txt)" autocomplete="off" style="margin-bottom:8px;">'
+    + '<input type="text" id="tkVBody" class="token-input" placeholder="ফাইলের ভেতরের লেখা" autocomplete="off" style="margin-bottom:8px;">'
+    + '<div style="font-weight:700;font-size:13px;margin:12px 0 4px;">৩) ইনবক্স মেসেজের উত্তর (Business Messaging API)</div>'
+    + '<input type="password" id="tkMsgTok" class="token-input" placeholder="Business Messaging Access Token" autocomplete="new-password" style="margin-bottom:8px;">'
+    + '<input type="text" id="tkBizId" class="token-input" placeholder="Business Account ID (থাকলে)" autocomplete="off" style="margin-bottom:8px;">'
+    + '<div class="hint" style="font-size:11px;line-height:1.7;">TikTok পোর্টালে Webhook Callback URL হিসেবে এটা দিন:<br><b id="tkHook" style="word-break:break-all;user-select:all;">—</b></div>'
+    + '<input type="text" id="tkSendUrl" class="token-input" placeholder="অ্যাডভান্সড: Send API URL (ডক মিলিয়ে বদলাতে চাইলে)" autocomplete="off" style="margin:8px 0;">'
+    + '<div class="shop-btns"><button class="btn btn-primary" onclick="tkSaveMsg()">সংরক্ষণ করুন</button></div>'
+    + '<div class="hint" style="margin-top:8px;font-size:11px;line-height:1.7;">ℹ️ ছবির পোস্টের অংশ TikTok-এর প্রকাশিত ডক অনুযায়ী বানানো। মেসেজ অংশের এন্ডপয়েন্ট ডকে পুরো ছিল না, তাই অনুমান করে বসানো — অনুমোদন পেয়ে দেখলে মিলিয়ে নিতে হতে পারে। TikTok অ্যাপ অডিট না হওয়া পর্যন্ত পোস্ট "শুধু নিজে দেখা" মোডে যায়।</div></div>';
+  return d;
+}
+
 function buildAssistantPanel(){
   const d = document.createElement('div');
   d.id = 'asstPanel';
@@ -2127,6 +2169,81 @@ async function asstLoad(){
   }catch(e){}
 }
 
+let tgOnFlag = false, tkOnFlag = false;
+async function tgLoad(){
+  const el = document.getElementById('tgStatus');
+  try{
+    const r = await apiFetch('/telegram/status');
+    tgOnFlag = !!r.connected; try{ refreshSettingsMenu(); }catch(e){}
+    if(!el) return;
+    document.getElementById('tgAuto').checked = r.autoPost !== false;
+    if(!r.connected){ el.innerHTML = '<span style="color:var(--ink-dim)">এখনো সংযুক্ত নয়</span>'; return; }
+    document.getElementById('tgChannel').value = r.channelName || document.getElementById('tgChannel').value;
+    el.innerHTML = '✅ বট: @' + asstEsc(r.bot) + (r.channel ? ' · চ্যানেল: ' + asstEsc(r.channel) : '') + '<br>' + (r.checks||[]).map(x => (x.ok ? '✅ ' : '❌ ') + asstEsc(x.msg)).join('<br>');
+  }catch(e){ if(el) el.textContent = (e && e.message) || ''; }
+}
+async function tgConnect(){
+  const g = id => document.getElementById(id);
+  const token = g('tgToken').value.trim(), channel = g('tgChannel').value.trim();
+  if(!token && !channel){ toast('টোকেন দিন'); return; }
+  try{
+    const j = await apiFetch('/telegram/connect', { method:'POST', body: JSON.stringify({ token, channel, autoPost: g('tgAuto').checked }) });
+    g('tgToken').value = '';
+    toast(j.note ? j.note : 'Telegram সংযুক্ত হয়েছে ✓'); tgLoad(); try{ refreshSettingsMenu(); }catch(e){}
+  }catch(e){ if(e && e.message) toast(e.message); }
+}
+async function tgAutoSave(on){ try{ await apiFetch('/telegram/autopost', { method:'POST', body: JSON.stringify({ on }) }); }catch(e){} }
+async function tgTest(){
+  try{ await apiFetch('/telegram/test', { method:'POST', body:'{}' }); toast('চ্যানেলে টেস্ট মেসেজ গেছে ✓'); }
+  catch(e){ if(e && e.message) toast(e.message); }
+}
+async function tgDisconnect(){
+  if(!confirm('Telegram বিচ্ছিন্ন করবেন? টোকেন মুছে যাবে।')) return;
+  try{ await apiFetch('/telegram/disconnect', { method:'POST', body:'{}' }); toast('বিচ্ছিন্ন হয়েছে'); tgLoad(); }
+  catch(e){ if(e && e.message) toast(e.message); }
+}
+
+async function tkLoad(){
+  const g = id => document.getElementById(id);
+  try{
+    const r = await apiFetch('/tiktok/status');
+    tkOnFlag = !!r.postConnected; try{ refreshSettingsMenu(); }catch(e){}
+    if(!g('tkStatus')) return;
+    g('tkRedirect').textContent = r.redirectUri; g('tkHook').textContent = r.webhookUrl;
+    g('tkAuto').checked = r.autoPost !== false;
+    if(r.verifyName) g('tkVName').value = r.verifyName;
+    if(r.sendUrl) g('tkSendUrl').value = r.sendUrl;
+    const lines = [];
+    lines.push(r.keysSet ? '✅ Client Key/Secret সংরক্ষিত' : '⏳ Client Key/Secret এখনো বসেনি');
+    lines.push(r.postConnected ? '✅ TikTok অ্যাকাউন্ট যুক্ত' + (r.displayName ? ': ' + asstEsc(r.displayName) : '') : '⏳ অ্যাকাউন্ট যুক্ত হয়নি');
+    lines.push(r.msgTokenSet ? '✅ মেসেজ টোকেন সংরক্ষিত' : '⏳ মেসেজ টোকেন এখনো বসেনি');
+    (r.checks||[]).forEach(x => lines.push((x.ok ? '✅ ' : '❌ ') + asstEsc(x.msg)));
+    g('tkStatus').innerHTML = lines.join('<br>');
+  }catch(e){ if(g('tkStatus')) g('tkStatus').textContent = (e && e.message) || ''; }
+}
+async function tkPost(body, okMsg){
+  try{ await apiFetch('/tiktok/config', { method:'POST', body: JSON.stringify(body) }); toast(okMsg || 'সংরক্ষণ হয়েছে ✓'); tkLoad(); try{ refreshSettingsMenu(); }catch(e){} return true; }
+  catch(e){ if(e && e.message) toast(e.message); return false; }
+}
+async function tkSaveKeys(){
+  const g = id => document.getElementById(id);
+  const ok = await tkPost({ tkClientKey: g('tkKey').value, tkClientSecret: g('tkSecret').value, tkVerifyName: g('tkVName').value, tkVerifyBody: g('tkVBody').value });
+  if(ok){ g('tkSecret').value = ''; g('tkVBody').value = ''; }
+}
+async function tkSaveMsg(){
+  const g = id => document.getElementById(id);
+  const ok = await tkPost({ tkMsgToken: g('tkMsgTok').value, tkMsgBusinessId: g('tkBizId').value, tkSendUrl: g('tkSendUrl').value });
+  if(ok) g('tkMsgTok').value = '';
+}
+async function tkAutoSave(on){ try{ await apiFetch('/tiktok/config', { method:'POST', body: JSON.stringify({ autoPost: on }) }); }catch(e){} }
+async function tkConnect(){
+  try{ const j = await apiFetch('/tiktok/auth-url'); window.open(j.url, '_blank'); toast('TikTok-এ অনুমতি দিয়ে ফিরে এসে অবস্থা দেখুন'); setTimeout(tkLoad, 15000); }
+  catch(e){ if(e && e.message) toast(e.message); }
+}
+async function tkDisconnect(){
+  if(!confirm('TikTok অ্যাকাউন্ট বিচ্ছিন্ন করবেন?')) return;
+  try{ await apiFetch('/tiktok/disconnect', { method:'POST', body:'{}' }); toast('বিচ্ছিন্ন হয়েছে'); tkLoad(); }catch(e){ if(e && e.message) toast(e.message); }
+}
 async function asstSave(){
   const g = id => document.getElementById(id);
   try{
@@ -2309,6 +2426,8 @@ function sIcon(k){
     link: st('<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/>'),
     user: st('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
     pulse: st('<path d="M3 12h4l3-8 4 16 3-8h4"/>'),
+    tg: st('<path d="M21 4L3 11l6 2.2L11 20l3-4.5 4.5 3.3z"/><path d="M9 13.2L21 4"/>'),
+    tk: st('<path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.4 2.6 2.2 4.4 5 4.7"/>'),
     bot: st('<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 16.5h6"/>'),
     cart: st('<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.3 11.2a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/>')
   };
@@ -2343,6 +2462,8 @@ function makeSettingsCollapsible(){
   SET_ENTRIES = [
     { head:'সংযোগ ও অটোমেশন', title:'Facebook পেজ', sub:'Messenger চ্যাট, অটো-কানেক্ট, পোস্ট', icon:'fb', tint:'#e7effe', color:'#1877F2', nodes:[g[2][0]], on:() => btnOn('fbBtn'), cnt:true },
     { title:'WhatsApp Business', sub:'Cloud API, Embedded Signup', icon:'wa', tint:'#def6e8', color:'#128C7E', nodes:[g[2][1]], on:() => btnOn('waBtn'), cnt:true, save:true },
+    { title:'Telegram', sub:'বট ও চ্যানেল — কাস্টমার চ্যাট, পোস্ট', icon:'tg', tint:'#e1f1fb', color:'#229ED9', nodes:[buildTelegramPanel()], on:() => tgOnFlag, cnt:true },
+    { title:'TikTok', sub:'ছবির পোস্ট ও ইনবক্স মেসেজ (API অনুমোদনের পর)', icon:'tk', tint:'#fde8f1', color:'#d6246e', nodes:[buildTiktokPanel()], on:() => tkOnFlag, cnt:true },
     { title:'Google Sheet', sub:'ইনভেন্টরি ও FAQ শিট সংযোগ', icon:'sheet', tint:'#e1f5ea', color:'#0f8a6e', nodes:g[3], on:() => btnOn('sheetBtn'), cnt:true, save:true },
     { title:'ই-কমার্স ওয়েবসাইট', sub:'অ্যাডমিন প্যানেল API, স্টক ও AI সিঙ্ক', icon:'cart', tint:'#fff0e0', color:'#e0731f', nodes:[buildShopPanel()], on:() => !!shopCfg.connected, cnt:true },
     { title:'মালিকের সহকারী', sub:'অ্যাপ/WhatsApp/Messenger থেকে কথা বলুন, কমেন্ট অটো-রিপ্লাই', icon:'bot', tint:'#e9f7e4', color:'#2e8b3d', nodes:[buildAssistantPanel()], on:() => !!(asstCfg.pinSet || asstCfg.commentAuto === 'on'), cnt:true },
@@ -2353,7 +2474,7 @@ function makeSettingsCollapsible(){
     { title:'সিস্টেম স্ট্যাটাস', sub:'Sheets, AI ইঞ্জিন, Webhook', icon:'pulse', tint:'#f0eefb', color:'#6a5ae0', nodes:g[7] }
   ];
   refreshSettingsMenu();
-  try{ if(apiConnected() && isLoggedIn()) asstLoad(); }catch(e){}
+  try{ if(apiConnected() && isLoggedIn()){ asstLoad(); tgLoad(); tkLoad(); } }catch(e){}
 }
 
 function refreshSettingsMenu(){
@@ -2399,6 +2520,8 @@ function openSetDetail(i){
   e.nodes.forEach(n => body.appendChild(n));
   if(e.icon === 'cart'){ shopRender(); shopLoadStatus(); }
   if(e.icon === 'bot'){ asstLoad(); }
+  if(e.icon === 'tg'){ tgLoad(); }
+  if(e.icon === 'tk'){ tkLoad(); }
   document.getElementById('setDetailFoot').innerHTML = e.save
     ? '<button class="btn btn-primary" style="margin:0;" onclick="saveAutomationSettings()">সংরক্ষণ করুন</button>' : '';
   body.scrollTop = 0;
