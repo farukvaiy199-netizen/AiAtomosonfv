@@ -1660,7 +1660,7 @@ async function openCustomerProfile(id){
       : '<div class="empty">কোনো কথোপকথন নেই</div>';
     content.innerHTML = `
       <div class="prof-head">${platformLogo(customer.platform, 34)}<h1 class="page-title" style="margin:0;">${customer.name}</h1></div>
-      <p class="page-sub">${customer.phone || ''} ${customer.phone ? '· ' : ''}${customer.platform === 'facebook' ? 'Messenger' : customer.platform === 'whatsapp' ? 'WhatsApp' : customer.platform === 'instagram' ? 'Instagram' : 'ওয়েবসাইট'}</p>
+      <p class="page-sub">${customer.phone || ''} ${customer.phone ? '· ' : ''}${platformName(customer.platform)}</p>
       <div class="section-head"><h2>অর্ডার হিস্টোরি</h2></div>
       ${ordersHtml}
       <div class="section-head"><h2>কথোপকথন</h2></div>
@@ -1744,6 +1744,17 @@ function platformLogo(p, size){
       + '<rect x="5.2" y="5.2" width="13.6" height="13.6" rx="4" fill="none" stroke="#fff" stroke-width="1.7"/>'
       + '<circle cx="12" cy="12" r="3.2" fill="none" stroke="#fff" stroke-width="1.7"/>'
       + '<circle cx="16.1" cy="7.9" r="1" fill="#fff"/>';
+  } else if(p === 'telegram'){
+    inner = '<circle cx="12" cy="12" r="12" fill="#229ED9"/>'
+      + '<path fill="#fff" d="M5.4 11.8l11.5-4.45c.53-.2 1 .13.83.94l-1.96 9.2c-.14.66-.54.82-1.09.51l-3-2.2-1.45 1.4c-.16.16-.3.3-.6.3l.21-3.05 5.55-5.02c.24-.21-.05-.33-.37-.12l-6.86 4.32-2.96-.92c-.64-.2-.65-.64.14-.95z"/>';
+  } else if(p === 'tiktok'){
+    inner = '<circle cx="12" cy="12" r="12" fill="#000"/>'
+      + '<path fill="#25F4EE" d="M13.6 6.2v7.6a2.5 2.5 0 1 1-2.5-2.5c.15 0 .3.01.44.04V9.1a4.6 4.6 0 1 0 4.1 4.55V9.9a5 5 0 0 0 2.9.9V8.6a3 3 0 0 1-2.4-2.4z" transform="translate(-.6 -.4)"/>'
+      + '<path fill="#FE2C55" d="M13.6 6.2v7.6a2.5 2.5 0 1 1-2.5-2.5c.15 0 .3.01.44.04V9.1a4.6 4.6 0 1 0 4.1 4.55V9.9a5 5 0 0 0 2.9.9V8.6a3 3 0 0 1-2.4-2.4z" transform="translate(.6 .4)"/>'
+      + '<path fill="#fff" d="M13.6 6.2v7.6a2.5 2.5 0 1 1-2.5-2.5c.15 0 .3.01.44.04V9.1a4.6 4.6 0 1 0 4.1 4.55V9.9a5 5 0 0 0 2.9.9V8.6a3 3 0 0 1-2.4-2.4z"/>';
+  } else if(p === 'email'){
+    inner = '<circle cx="12" cy="12" r="12" fill="#EA4335"/>'
+      + '<g fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><rect x="5.2" y="7.4" width="13.6" height="9.2" rx="1.8"/><path d="M5.8 8.4l6.2 4.6 6.2-4.6"/></g>';
   } else {
     inner = '<circle cx="12" cy="12" r="12" fill="#2379b8"/>'
       + '<g fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="6.6"/><ellipse cx="12" cy="12" rx="2.9" ry="6.6"/><path d="M5.4 12h13.2"/></g>';
@@ -1753,9 +1764,12 @@ function platformLogo(p, size){
 
 // নাম জানা না গেলে (Meta অনেক সময় নাম দেয় না) প্ল্যাটফর্ম + আইডির শেষ ৪ অক্ষর দেখাই,
 // যাতে একজনকে আরেকজন থেকে আলাদা করা যায়
+function platformName(p){
+  return ({facebook:'Messenger',whatsapp:'WhatsApp',instagram:'Instagram',telegram:'Telegram',tiktok:'TikTok',email:'ইমেইল',website:'ওয়েবসাইট'})[p] || (p || '');
+}
 function customerDisplayName(c){
   if(c.name && c.name !== 'অজানা কাস্টমার') return c.name;
-  const plat = c.platform === 'facebook' ? 'Messenger' : c.platform === 'whatsapp' ? 'WhatsApp' : c.platform === 'instagram' ? 'Instagram' : 'কাস্টমার';
+  const plat = ({facebook:'Messenger',whatsapp:'WhatsApp',instagram:'Instagram',telegram:'Telegram',tiktok:'TikTok',email:'ইমেইল'})[c.platform] || 'কাস্টমার';
   return plat + ' ···' + String(c.platformId || c.id || '').slice(-4);
 }
 
@@ -1864,7 +1878,9 @@ function chatLink(c){
   if(c.platform === 'instagram') return c.username ? 'https://ig.me/m/' + c.username : 'https://www.instagram.com/direct/inbox/';
   if(c.platform === 'facebook' && c.platformId) return 'https://www.messenger.com/t/' + c.platformId;
   if(c.platform === 'whatsapp' && c.platformId) return 'https://wa.me/' + c.platformId.replace(/[^0-9]/g,'');
-  if(c.platform === 'website' && c.phone) return 'https://wa.me/' + c.phone.replace(/[^0-9]/g,'');
+  if(c.platform === 'telegram') return c.username ? 'https://t.me/' + c.username : null;
+  if(c.platform === 'tiktok') return c.username ? 'https://www.tiktok.com/@' + c.username : null;
+  if(c.platform === 'email' && c.email) return 'mailto:' + c.email;
   return null;
 }
 
@@ -1880,8 +1896,9 @@ function renderCustomers(){
   }
   wrap.innerHTML = filtered.map(c=>{
     const link = chatLink(c);
-    const linkLabel = c.platform === 'website' ? 'WhatsApp' : (c.platform === 'facebook' ? 'Messenger' : (c.platform === 'instagram' ? 'Instagram' : 'WhatsApp'));
-    const platformLabel = c.platform === 'facebook' ? 'Messenger' : c.platform === 'whatsapp' ? 'WhatsApp' : c.platform === 'instagram' ? 'Instagram' : c.platform === 'website' ? 'ওয়েবসাইট' : (c.platform || '');
+    const linkLabel = platformName(c.platform);
+    const platformLabel = platformName(c.platform);
+    const waNum = (c.platform === 'website' && c.phone) ? c.phone.replace(/[^0-9]/g,'') : '';
     const avatar = c.photoUrl
       ? `<img src="${c.photoUrl}" style="width:40px;height:40px;border-radius:11px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div class=row-avatar>${initials(customerDisplayName(c))}</div>'">`
       : `<div class="row-avatar">${initials(customerDisplayName(c))}</div>`;
@@ -1893,6 +1910,7 @@ function renderCustomers(){
         <div class="t2">${c.phone ? c.phone + ' · ' : ''}<span class="plat-chip">${platformLogo(c.platform, 13)}${platformLabel}</span> · মোট অর্ডার ${c.orders}</div>
         ${c.needsHuman ? `<div class="t2" style="color:var(--coral); font-weight:600;">🙋 মানুষের অপেক্ষায়: ${escHtml(c.needsHumanReason||'')} <span style="text-decoration:underline; cursor:pointer;" onclick="markHandled('${c.id}')">দেখেছি ✓</span></div>` : ''}
         ${link ? `<a href="${link}" target="_blank" class="chat-open-link">${platformLogo(c.platform, 16)}${linkLabel}-এ চ্যাট খুলুন →</a>` : ''}
+        ${waNum ? `<a href="https://wa.me/${waNum}" target="_blank" class="chat-open-link">${platformLogo('whatsapp', 16)}এই নম্বরে WhatsApp করুন →</a>` : ''}
       </div>
       <div class="cust-toggle ${c.ai?'live':''}" onclick="toggleAi('${c.id}')">
         <span class="dot"></span> ${c.ai ? 'AI চালু' : 'AI বন্ধ'}
@@ -2132,6 +2150,60 @@ function buildTelegramPanel(){
     + '<div class="hint" style="margin-top:8px;font-size:11px;line-height:1.7;">ধাপ: ১) Telegram-এ @BotFather → /newbot → টোকেন নিন। ২) নিজের চ্যানেল খুলে বটকে Admin বানান (Post messages অনুমতিসহ)। ৩) এখানে টোকেন ও চ্যানেলের নাম দিয়ে "সংযুক্ত করুন"। ৪) বটে গিয়ে লিখুন <b>/link আপনার-PIN</b> — তাহলে বটেই সহকারীর সাথে কথা বলতে পারবেন। ⚠️ টোকেন কাউকে বা স্ক্রিনশটে দেখাবেন না।</div></div>';
   return d;
 }
+
+let emOnFlag = false;
+function buildEmailPanel(){
+  const d = document.createElement('div');
+  d.id = 'emPanel';
+  d.innerHTML =
+    '<div class="card conn-card"><div class="l" style="margin-bottom:4px;">✉️ ইমেইল (Gmail দিয়ে)</div>'
+    + '<div class="hint" style="margin-bottom:8px;">অর্ডারে কাস্টমার ইমেইল দিলে তার ইমেইলে রশিদ যাবে, আর কাস্টমার ইমেইল করলে AI উত্তর দেবে। আপনার নিজের Gmail থেকে যায় — বিনামূল্যে, ডোমেইন লাগে না।</div>'
+    + '<div id="emStatus" style="font-size:12px;line-height:1.7;margin-bottom:8px;"></div>'
+    + '<div style="font-weight:700;font-size:13px;margin:4px 0;">ধাপ ১ — স্ক্রিপ্ট বসান</div>'
+    + '<div class="hint" style="font-size:11px;line-height:1.7;margin-bottom:6px;">১) script.google.com খুলে (Gmail দিয়ে লগইন) <b>New project</b> চাপুন। ২) ভেতরের সব কোড মুছে নিচের কোড পেস্ট করে Save দিন। ৩) <b>Deploy → New deployment → Web app</b>: Execute as = <b>Me</b>, Who has access = <b>Anyone</b> → Deploy → অনুমতি দিন। ৪) যে <b>Web app URL</b> পাবেন সেটা নিচে বসান। ৫) বাঁ পাশে ⏰ Triggers → Add Trigger → <b>checkInbox</b> → Time-driven → Every 5 minutes।</div>'
+    + '<div class="shop-btns" style="gap:6px;flex-wrap:wrap;margin-bottom:8px;"><button class="btn btn-ghost" onclick="emCopyScript()">📋 স্ক্রিপ্ট কপি করুন</button></div>'
+    + '<div style="font-weight:700;font-size:13px;margin:4px 0;">ধাপ ২ — Web app URL</div>'
+    + '<input type="text" id="emUrl" class="token-input" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" style="margin-bottom:8px;">'
+    + '<div class="shop-btns" style="gap:6px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="emConnect()">সংযুক্ত করুন</button><button class="btn btn-ghost" onclick="emTest()">টেস্ট ইমেইল</button><button class="btn btn-ghost" onclick="emDisconnect()">বিচ্ছিন্ন</button></div>'
+    + '<label class="shop-row" style="margin:10px 0 4px;"><span class="ic" style="background:#fdeaea">🤖</span><span class="tx"><b>ইমেইলে AI উত্তর দিক</b><small>কাস্টমার ইমেইল করলে AI নিজে উত্তর দেবে (বন্ধ রাখলে শুধু অর্ডারের রশিদ যাবে)</small></span><input type="checkbox" id="emAi" onchange="emAiSave(this.checked)"></label>'
+    + '<div class="hint" style="font-size:11px;line-height:1.7;margin-top:6px;">দৈনিক সীমা: সাধারণ Gmail থেকে প্রায় ১০০টা ইমেইল। নতুন ইমেইল ধরতে সর্বোচ্চ ৫ মিনিট লাগে।</div></div>';
+  return d;
+}
+async function emLoad(){
+  const el = document.getElementById('emStatus');
+  try{
+    const r = await apiFetch('/email/status');
+    emOnFlag = !!(r.bridge || r.resend);
+    try{ refreshSettingsMenu(); }catch(e){}
+    if(!el) return;
+    const ai = document.getElementById('emAi'); if(ai) ai.checked = !!r.aiReply;
+    el.innerHTML = r.bridge ? '✅ Gmail সংযুক্ত' + (r.bridgeEmail ? ': ' + asstEsc(r.bridgeEmail) : '')
+      : (r.resend ? '⚠️ Resend চালু (শুধু নিজের ঠিকানায় যায় — Gmail ব্রিজ বসান)' : '<span style="color:var(--ink-dim)">এখনো সংযুক্ত নয়</span>');
+  }catch(e){ if(el) el.textContent = (e && e.message) || ''; }
+}
+async function emCopyScript(){
+  try{
+    const j = await apiFetch('/email/script');
+    try{ await navigator.clipboard.writeText(j.script); toast('স্ক্রিপ্ট কপি হয়েছে ✓'); }
+    catch(e){ const t = document.createElement('textarea'); t.value = j.script; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); toast('স্ক্রিপ্ট কপি হয়েছে ✓'); }
+  }catch(e){ if(e && e.message) toast(e.message); }
+}
+async function emConnect(){
+  const url = document.getElementById('emUrl').value.trim();
+  if(!url){ toast('Web app URL দিন'); return; }
+  try{ const j = await apiFetch('/email/connect', { method:'POST', body: JSON.stringify({ url }) }); toast('Gmail সংযুক্ত ✓ ' + (j.email||'')); document.getElementById('emUrl').value = ''; emLoad(); }
+  catch(e){ if(e && e.message) toast(e.message); }
+}
+async function emTest(){
+  const to = prompt('কোন ইমেইলে টেস্ট পাঠাবেন?', (function(){ try{ return localStorage.getItem('sb_email') || ''; }catch(e){ return ''; } })());
+  if(!to) return;
+  try{ await apiFetch('/email/test', { method:'POST', body: JSON.stringify({ to }) }); toast('টেস্ট ইমেইল গেছে ✓'); }
+  catch(e){ if(e && e.message) toast(e.message); }
+}
+async function emDisconnect(){
+  try{ await apiFetch('/email/disconnect', { method:'POST', body:'{}' }); toast('বিচ্ছিন্ন হয়েছে'); emLoad(); }catch(e){ if(e && e.message) toast(e.message); }
+}
+async function emAiSave(on){ try{ await apiFetch('/email/ai-reply', { method:'POST', body: JSON.stringify({ on }) }); toast(on ? 'ইমেইলে AI উত্তর চালু' : 'ইমেইলে AI উত্তর বন্ধ'); }catch(e){ if(e && e.message) toast(e.message); } }
 
 function buildTiktokPanel(){
   const d = document.createElement('div');
@@ -2466,6 +2538,7 @@ function sIcon(k){
     user: st('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
     pulse: st('<path d="M3 12h4l3-8 4 16 3-8h4"/>'),
     tg: st('<path d="M21 4L3 11l6 2.2L11 20l3-4.5 4.5 3.3z"/><path d="M9 13.2L21 4"/>'),
+    mail: st('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/>'),
     tk: st('<path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5"/><path d="M14 3c.4 2.6 2.2 4.4 5 4.7"/>'),
     bot: st('<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 16.5h6"/>'),
     cart: st('<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.3 11.2a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/>')
@@ -2503,6 +2576,7 @@ function makeSettingsCollapsible(){
     { title:'WhatsApp Business', sub:'Cloud API, Embedded Signup', icon:'wa', tint:'#def6e8', color:'#128C7E', nodes:[g[2][1]], on:() => btnOn('waBtn'), cnt:true, save:true },
     { title:'Telegram', sub:'বট ও চ্যানেল — কাস্টমার চ্যাট, পোস্ট', icon:'tg', tint:'#e1f1fb', color:'#229ED9', nodes:[buildTelegramPanel()], on:() => tgOnFlag, cnt:true },
     { title:'TikTok', sub:'ছবির পোস্ট ও ইনবক্স মেসেজ (API অনুমোদনের পর)', icon:'tk', tint:'#fde8f1', color:'#d6246e', nodes:[buildTiktokPanel()], on:() => tkOnFlag, cnt:true },
+    { title:'ইমেইল (Gmail)', sub:'অর্ডারের রশিদ ও ইমেইলে AI উত্তর', icon:'mail', tint:'#fdeaea', color:'#EA4335', nodes:[buildEmailPanel()], on:() => emOnFlag, cnt:true },
     { title:'Google Sheet', sub:'ইনভেন্টরি ও FAQ শিট সংযোগ', icon:'sheet', tint:'#e1f5ea', color:'#0f8a6e', nodes:g[3], on:() => btnOn('sheetBtn'), cnt:true, save:true },
     { title:'ই-কমার্স ওয়েবসাইট', sub:'অ্যাডমিন প্যানেল API, স্টক ও AI সিঙ্ক', icon:'cart', tint:'#fff0e0', color:'#e0731f', nodes:[buildShopPanel()], on:() => !!shopCfg.connected, cnt:true },
     { title:'মালিকের সহকারী', sub:'অ্যাপ/WhatsApp/Messenger থেকে কথা বলুন, কমেন্ট অটো-রিপ্লাই', icon:'bot', tint:'#e9f7e4', color:'#2e8b3d', nodes:[buildAssistantPanel()], on:() => !!(asstCfg.pinSet || asstCfg.commentAuto === 'on'), cnt:true },
@@ -2513,7 +2587,7 @@ function makeSettingsCollapsible(){
     { title:'সিস্টেম স্ট্যাটাস', sub:'Sheets, AI ইঞ্জিন, Webhook', icon:'pulse', tint:'#f0eefb', color:'#6a5ae0', nodes:g[7] }
   ];
   refreshSettingsMenu();
-  try{ if(apiConnected() && isLoggedIn()){ asstLoad(); tgLoad(); tkLoad(); } }catch(e){}
+  try{ if(apiConnected() && isLoggedIn()){ asstLoad(); tgLoad(); tkLoad(); emLoad(); } }catch(e){}
 }
 
 function refreshSettingsMenu(){
@@ -2560,6 +2634,7 @@ function openSetDetail(i){
   if(e.icon === 'cart'){ shopRender(); shopLoadStatus(); }
   if(e.icon === 'bot'){ asstLoad(); }
   if(e.icon === 'tg'){ tgLoad(); }
+  if(e.icon === 'mail'){ emLoad(); }
   if(e.icon === 'tk'){ tkLoad(); }
   document.getElementById('setDetailFoot').innerHTML = e.save
     ? '<button class="btn btn-primary" style="margin:0;" onclick="saveAutomationSettings()">সংরক্ষণ করুন</button>' : '';
