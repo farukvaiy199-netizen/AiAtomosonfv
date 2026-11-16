@@ -1291,7 +1291,7 @@ function renderOwnerChat(){
 }
 
 /* ---- AI ব্যবহার ---- */
-const PROVIDER_NAMES = { groq:'Groq', openai:'OpenAI', openrouter:'OpenRouter', gemini:'Google Gemini', deepseek:'DeepSeek', mistral:'Mistral', cerebras:'Cerebras', sambanova:'SambaNova', nvidia:'NVIDIA NIM', github:'GitHub Models', anthropic:'Claude (Anthropic)', xai:'Grok (xAI)', together:'Together AI', custom:'Custom AI' };
+const PROVIDER_NAMES = { groq:'Groq', openai:'OpenAI', openrouter:'OpenRouter', gemini:'Google Gemini', deepseek:'DeepSeek', mistral:'Mistral', cerebras:'Cerebras', sambanova:'SambaNova', nvidia:'NVIDIA NIM', github:'GitHub Models', anthropic:'Claude (Anthropic)', xai:'Grok (xAI)', together:'Together AI', fal:'fal.ai (ছবি)', custom:'Custom AI' };
 let aiLimitsCache = {};
 
 async function loadAiUsage(){
@@ -2013,14 +2013,14 @@ const AI_PROVIDERS = [
   ['groq','Groq (Llama)'], ['openai','OpenAI (ChatGPT)'], ['gemini','Google Gemini'], ['openrouter','OpenRouter'],
   ['deepseek','DeepSeek'], ['mistral','Mistral'],
   ['cerebras','Cerebras (ফ্রি টোকেন)'], ['sambanova','SambaNova (ফ্রি টোকেন)'], ['nvidia','NVIDIA NIM (ফ্রি ক্রেডিট)'], ['github','GitHub Models (ফ্রি)'],
-  ['anthropic','Claude (Anthropic)'], ['xai','Grok (xAI)'], ['together','Together AI'],
+  ['anthropic','Claude (Anthropic)'], ['xai','Grok (xAI)'], ['together','Together AI'], ['fal','fal.ai (শুধু ছবি তৈরি)'],
   ['custom','অন্য যেকোনো AI (OpenAI-সামঞ্জস্যপূর্ণ)']
 ];
 const AI_DEFAULT_MODEL = {
   groq:'llama-3.3-70b-versatile', openai:'gpt-4o-mini', gemini:'gemini-flash-latest', openrouter:'openai/gpt-4o-mini',
   deepseek:'deepseek-chat', mistral:'mistral-small-latest', custom:'মডেলের নাম লিখুন (বাধ্যতামূলক)',
   cerebras:'llama3.1-8b', sambanova:'Meta-Llama-3.3-70B-Instruct', nvidia:'meta/llama-3.3-70b-instruct', github:'openai/gpt-4o-mini',
-  anthropic:'claude-haiku-5-5', xai:'grok-4', together:'meta-llama/Llama-3.3-70B-Instruct-Turbo'
+  anthropic:'claude-haiku-5-5', xai:'grok-4', together:'meta-llama/Llama-3.3-70B-Instruct-Turbo', fal:'fal-ai/flux/schnell'
 };
 const AI_BN = ['', '১', '২', '৩', '৪', '৫', '৬', '৭'];
 const AI_SLOT_DEFS = [{ type:'ai', sfx:'', title:'প্রধান AI' }].concat([2,3,4,5,6,7,8].map(n => ({ type:'ai' + n, sfx:String(n), title:'ব্যাকআপ AI ' + AI_BN[n-1] })));
