@@ -169,6 +169,34 @@
   .badge.processing{background:#e3e0fb; color:#5646d0;}
   .badge.delivered{background:#d3f1e4; color:#0d7a58;}
   .badge.cancelled{background:#fde0d8; color:#c4472f;}
+  /* ===== অর্ডার: উৎস চিহ্ন, ফোনের ফলাফল (সবুজ/হলুদ/লাল) ===== */
+  .ord-card{display:block; padding:13px 14px 12px; margin-bottom:11px; border-left:5px solid #cfd8d5;}
+  .ord-card.c-confirmed{border-left-color:#16a870;}
+  .ord-card.c-later{border-left-color:#e3a50f;}
+  .ord-card.c-rejected{border-left-color:#d9534f;}
+  .ord-card.c-noanswer{border-left-color:#8d99a6;}
+  .ord-card .t2{font-size:11.5px; color:var(--ink-dim);}
+  .ord-top{display:flex; align-items:center; gap:11px;}
+  .ord-src{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; color:var(--ink-dim); background:#eef5f2; padding:3px 9px 3px 4px; border-radius:20px; margin-top:3px;}
+  .ord-src .plat-logo{display:inline-flex;}
+  .ord-phone{display:inline-flex; align-items:center; gap:6px; margin-top:7px; font-size:15px; font-weight:700; color:var(--teal-deep); text-decoration:none; background:#e7f6ef; padding:7px 13px; border-radius:22px;}
+  .ord-phone.none{color:var(--ink-faint); background:#f1f3f3; font-weight:600; font-size:12px;}
+  .call-chip{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:4px 11px; border-radius:20px; margin:6px 6px 0 0;}
+  .call-chip.confirmed{background:#d3f1e4; color:#0d7a58;}
+  .call-chip.later{background:#fdecc8; color:#9a6a00;}
+  .call-chip.rejected{background:#fde0d8; color:#c4472f;}
+  .call-chip.noanswer{background:#e7eaee; color:#5b6672;}
+  .call-chip.none{background:#f1f3f3; color:#7b8791;}
+  .call-note{font-size:11.5px; color:var(--ink-dim); margin-top:5px; padding:6px 10px; background:#fffaf0; border-radius:10px; border:1px dashed #efd9a1;}
+  .call-acts{display:flex; gap:6px; flex-wrap:wrap; margin-top:9px;}
+  .call-acts button{font-family:inherit; font-size:11.5px; font-weight:700; border:0; border-radius:20px; padding:7px 12px; cursor:pointer;}
+  .ca-g{background:#16a870; color:#fff;} .ca-y{background:#f2b51e; color:#3b2c00;} .ca-r{background:#e5645f; color:#fff;} .ca-n{background:#e7eaee; color:#445;}
+  .ord-meta{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px; padding-top:8px; border-top:1px solid #eef3f1;}
+  .ord-ship{font-size:11.5px; color:var(--ink-dim);}
+  .remind-bar{background:#fff6dd; border:1px solid #f0d58a; color:#7a5600; border-radius:14px; padding:10px 13px; font-size:12.5px; font-weight:600; margin-bottom:10px; line-height:1.6;}
+  .sync-bar{background:#fdecea; border:1px solid #f3c3bd; color:#a33a30; border-radius:14px; padding:9px 12px; font-size:11.5px; margin-bottom:10px; line-height:1.6;}
+  .call-sheet-note{width:100%; border:1px solid var(--glass-brd); border-radius:12px; padding:11px; font-family:inherit; font-size:13px; min-height:78px; resize:vertical; box-sizing:border-box;}
+
 
   /* ---- Search / filter ---- */
   .search-wrap{display:flex; gap:8px; margin-bottom:12px;}
@@ -613,7 +641,14 @@
         <div class="chip" data-f="Processing">প্রসেসিং</div>
         <div class="chip" data-f="Delivered">ডেলিভারড</div>
         <div class="chip" data-f="Cancelled">বাতিল</div>
+        <div class="chip" data-f="call:none">⚪ ফোন বাকি</div>
+        <div class="chip" data-f="call:confirmed">🟢 কনফার্ম</div>
+        <div class="chip" data-f="call:later">🟡 পরে</div>
+        <div class="chip" data-f="call:rejected">🔴 রিজেক্ট</div>
+        <div class="chip" data-f="call:noanswer">📵 ধরেনি</div>
       </div>
+      <div id="orderSyncBar"></div>
+      <div id="orderRemindBar"></div>
       <div id="ordersList"></div>
     </section>
 
@@ -982,6 +1017,18 @@
       <div class="login-err" id="loginErr"></div>
       <button class="btn btn-primary" style="margin-top:2px;" onclick="doLogin()">লগইন করুন</button>
       <button class="btn btn-ghost" onclick="closeLoginOverlay()">ডিজাইন শুধু দেখুন (লগইন ছাড়া)</button>
+    </div>
+  </div>
+
+  <!-- ================= ফোনের ফলাফল শীট ================= -->
+  <div class="profile-overlay hidden" id="callOverlay" onclick="if(event.target===this) closeCallSheet()">
+    <div class="profile-sheet">
+      <div class="sheet-grab"></div>
+      <div class="more-head">
+        <div><h1 class="page-title" style="margin:0; font-size:18px;" id="callSheetTitle">ফোনের ফলাফল</h1><p class="page-sub" style="margin:3px 0 0;" id="callSheetSub"></p></div>
+        <span class="sheet-x" onclick="closeCallSheet()">✕</span>
+      </div>
+      <div id="callSheetBody" style="margin-top:12px;"></div>
     </div>
   </div>
 
@@ -1788,6 +1835,7 @@ async function loadOrders(){
   renderRecentOrders();
   renderOrders();
   updateDashboardStats();
+  loadOrderSyncBar();
 }
 
 function renderRecentOrders(){
@@ -1810,41 +1858,135 @@ function renderRecentOrders(){
   `).join('');
 }
 
+/* ---------------- অর্ডার: উৎস, ফোন ও ফলাফল ---------------- */
+function orderSrcKey(o){
+  const m = {Messenger:'facebook', Instagram:'instagram', Telegram:'telegram', TikTok:'tiktok', WhatsApp:'whatsapp', Email:'email', 'ইমেইল':'email', 'Bazaar Admin':'website'};
+  return m[o.source] || 'website';
+}
+function orderSrcLabel(o){
+  const k = orderSrcKey(o);
+  return k === 'website' ? 'ওয়েবসাইট থেকে' : platformName(k) + ' থেকে';
+}
+function phoneDigits(p){ return String(p || '').replace(/[^\d+]/g, ''); }
+function todayBD(){ return new Date().toLocaleDateString('en-CA', {timeZone:'Asia/Dhaka'}); }
+function callStateOf(o){ return o.callStatus || 'none'; }
+function callChipHtml(o){
+  const st = callStateOf(o);
+  if(st === 'confirmed') return '<span class="call-chip confirmed">🟢 ফোনে কনফার্ম</span>';
+  if(st === 'later') return '<span class="call-chip later">🟡 পরে নেবে' + (o.remindAt ? ' · ' + escHtml(o.remindAt) : '') + '</span>';
+  if(st === 'rejected') return '<span class="call-chip rejected">🔴 রিজেক্ট</span>';
+  if(st === 'noanswer') return '<span class="call-chip noanswer">📵 ধরেনি' + (o.callAttempts > 1 ? ' · ' + o.callAttempts + ' বার' : '') + '</span>';
+  return '<span class="call-chip none">⚪ এখনো ফোন করা হয়নি</span>';
+}
+function deliveryBadge(o){
+  if(o.notReceived) return '<span class="badge cancelled">রিসিভ করেননি</span>';
+  return statusBadge(o.status);
+}
+function orderCardHtml(o){
+  const st = callStateOf(o);
+  const dig = phoneDigits(o.phone);
+  const phone = dig ? '<a class="ord-phone" href="tel:' + escHtml(dig) + '">📞 ' + escHtml(o.phone) + '</a>' : '<span class="ord-phone none">📵 ফোন নম্বর নেই</span>';
+  const shipLine = (o.courier || o.tracking) ? '<span class="ord-ship">🚚 ' + escHtml(o.courier || 'কুরিয়ার') + (o.tracking ? ' · ' + escHtml(o.tracking) : '') + '</span>' : '<span class="ord-ship">' + (o.fsSynced ? '🛒 অ্যাডমিন প্যানেলে আছে' : '') + '</span>';
+  const acts = (o.status !== 'Delivered' && o.status !== 'Cancelled') ? '<div class="call-acts">'
+    + (st !== 'confirmed' ? '<button class="ca-g" onclick="callAct(\'' + o.id + '\',\'confirmed\')">✅ কনফার্ম</button>' : '')
+    + '<button class="ca-y" onclick="callAct(\'' + o.id + '\',\'later\')">⏳ পরে</button>'
+    + '<button class="ca-r" onclick="callAct(\'' + o.id + '\',\'rejected\')">❌ রিজেক্ট</button>'
+    + (st !== 'noanswer' ? '<button class="ca-n" onclick="callAct(\'' + o.id + '\',\'noanswer\')">📵 ধরেনি</button>' : '')
+    + '</div>' : '';
+  const note = o.callNote ? '<div class="call-note">📝 ' + escHtml(o.callNote) + '</div>' : '';
+  const warn = o.syncNote ? '<div class="t2" style="color:var(--coral); margin-top:5px;">⚠️ অ্যাডমিন প্যানেল: ' + escHtml(o.syncNote) + '</div>' : '';
+  return '<div class="card ord-card c-' + st + '">'
+    + '<div class="ord-top"><div class="row-avatar">' + initials(o.name) + '</div>'
+    + '<div class="row-main"><div class="t1">' + escHtml(o.name) + '</div>'
+    + '<span class="ord-src">' + platformLogo(orderSrcKey(o), 16) + orderSrcLabel(o) + '</span></div>'
+    + '<div class="row-end"><div class="amt">৳' + (Number(o.price || 0) * Number(o.qty || 1)).toLocaleString() + '</div>' + deliveryBadge(o) + '</div></div>'
+    + '<div class="t2" style="margin-top:8px;">' + escHtml(o.product) + ' · x' + (o.qty || 1) + ' · ' + escHtml(o.id) + '</div>'
+    + (o.address ? '<div class="t2" style="margin-top:2px;">📍 ' + escHtml(o.address) + '</div>' : '')
+    + phone
+    + '<div>' + callChipHtml(o) + '</div>' + note + acts
+    + '<div class="ord-meta">' + shipLine
+    + '<select class="status-select" style="margin-top:0;" onchange="updateStatus(\'' + o.id + '\', this.value)">'
+    + ['Pending', 'Processing', 'Delivered', 'Cancelled'].map(x => '<option ' + (o.status === x ? 'selected' : '') + '>' + x + '</option>').join('') + '</select></div>'
+    + (o.notifyStatus === 'failed' ? '<div class="t2" style="color:var(--coral);">⚠️ ' + escHtml(o.notifyNote || 'কাস্টমারকে জানানো যায়নি') + '</div>' : '')
+    + warn + '</div>';
+}
+
 function renderOrders(){
   const wrap = document.getElementById('ordersList');
   if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
   if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
   const q = document.getElementById('orderSearch').value.trim().toLowerCase();
+  const f = currentOrderFilter;
   let filtered = orders.filter(o=>{
-    const matchesFilter = currentOrderFilter==='all' || o.status===currentOrderFilter;
-    const matchesSearch = !q || o.name.toLowerCase().includes(q) || o.id.toLowerCase().includes(q);
-    return matchesFilter && matchesSearch;
+    let matchesFilter = true;
+    if(f.startsWith('call:')) matchesFilter = callStateOf(o) === f.slice(5);
+    else if(f !== 'all') matchesFilter = o.status === f;
+    const hay = ((o.name || '') + ' ' + (o.id || '') + ' ' + (o.phone || '')).toLowerCase();
+    return matchesFilter && (!q || hay.includes(q));
   });
+  // আজ বা তার আগে "পরে ফোন" করার কথা যাদের
+  const today = todayBD();
+  const due = orders.filter(o=>callStateOf(o) === 'later' && o.remindAt && o.remindAt <= today && o.status !== 'Cancelled' && o.status !== 'Delivered');
+  const rb = document.getElementById('orderRemindBar');
+  if(rb) rb.innerHTML = due.length ? '<div class="remind-bar">⏰ ফোন করার সময় হয়েছে (' + due.length + ' জন): ' + due.slice(0, 4).map(o=>escHtml(o.name)).join(', ') + (due.length > 4 ? '…' : '') + '</div>' : '';
   if(!filtered.length){
     wrap.innerHTML = `<div class="empty">কোনো অর্ডার পাওয়া যায়নি</div>`;
     return;
   }
-  wrap.innerHTML = filtered.map(o=>`
-    <div class="card row-card">
-      <div class="row-avatar">${initials(o.name)}</div>
-      <div class="row-main">
-        <div class="t1">${o.name}</div>
-        <div class="t2">${o.product} · x${o.qty} · ${o.source}</div>
-        ${(o.phone || o.address) ? `<div class="t2" style="margin-top:1px;">${[o.phone, o.address].filter(Boolean).join(' · ')}</div>` : ''}
-        <select class="status-select" onchange="updateStatus('${o.id}', this.value)">
-          <option ${o.status==='Pending'?'selected':''}>Pending</option>
-          <option ${o.status==='Processing'?'selected':''}>Processing</option>
-          <option ${o.status==='Delivered'?'selected':''}>Delivered</option>
-          <option ${o.status==='Cancelled'?'selected':''}>Cancelled</option>
-        </select>
-        ${o.notifyStatus==='failed' ? `<div class="t2" style="color:var(--coral);">⚠️ ${escHtml(o.notifyNote||'কাস্টমারকে জানানো যায়নি')}</div>` : ''}
-      </div>
-      <div class="row-end">
-        <div class="amt">৳${o.price.toLocaleString()}</div>
-        ${statusBadge(o.status)}
-      </div>
-    </div>
-  `).join('');
+  wrap.innerHTML = filtered.map(orderCardHtml).join('');
+}
+
+async function loadOrderSyncBar(){
+  const bar = document.getElementById('orderSyncBar'); if(!bar) return;
+  try{
+    const r = await apiFetch('/orders/sync-status');
+    bar.innerHTML = r && r.ready === false ? '<div class="sync-bar">🔌 অ্যাডমিন প্যানেলের সাথে অর্ডার মেলানো বন্ধ আছে — ' + escHtml(r.reason || '') + '<br>ফোনে কনফার্ম করা অর্ডার এ কারণে অ্যাডমিন প্যানেলে যাবে না।</div>'
+      : (r && r.last && r.last.ok === false ? '<div class="sync-bar">⚠️ অ্যাডমিন প্যানেল থেকে অবস্থা আনা যায়নি — ' + escHtml(r.last.reason || '') + '</div>' : '');
+  }catch(e){ bar.innerHTML = ''; }
+}
+
+/* ---------- ফোনের ফলাফল শীট ---------- */
+let callCtx = null;
+function closeCallSheet(){ document.getElementById('callOverlay').classList.add('hidden'); callCtx = null; }
+function callAct(id, result){
+  const o = orders.find(x=>x.id === id); if(!o) return;
+  callCtx = { id, result };
+  const titles = {confirmed:'✅ অর্ডার কনফার্ম', later:'⏳ কিছুদিন পরে নেবে', rejected:'❌ অর্ডার রিজেক্ট', noanswer:'📵 ফোন ধরেনি'};
+  document.getElementById('callSheetTitle').textContent = titles[result];
+  document.getElementById('callSheetSub').textContent = o.name + ' · ' + o.id;
+  let html = '';
+  if(result === 'later'){
+    html += '<label class="t2" style="font-weight:700;">কবে আবার ফোন করবেন?</label><input type="date" id="callRemind" min="' + todayBD() + '" style="width:100%; margin:6px 0 12px; padding:11px; border:1px solid var(--glass-brd); border-radius:12px; font-family:inherit; box-sizing:border-box;">';
+    html += '<label class="t2" style="font-weight:700;">নোট (কেন দেরি, কী বলল)</label><textarea class="call-sheet-note" id="callNote" placeholder="যেমন: বেতন পেয়ে নেবে / ঈদের পরে / বাড়িতে কেউ নেই">' + escHtml(o.callNote || '') + '</textarea>';
+  }else{
+    html += '<label class="t2" style="font-weight:700;">নোট (ইচ্ছা হলে)</label><textarea class="call-sheet-note" id="callNote" placeholder="কিছু লিখে রাখতে চাইলে...">' + escHtml(o.callNote || '') + '</textarea>';
+  }
+  if(result === 'rejected') html += '<div class="t2" style="margin-top:10px; line-height:1.7;">রিজেক্ট করলে অর্ডার বাতিল হবে, স্টক ফিরে আসবে এবং অর্ডারটি অ্যাডমিন প্যানেলে যাবে না (ওয়েবসাইটের অর্ডার হলে সেখানে "বাতিল" হবে)।</div>';
+  if(result === 'confirmed') html += '<div class="t2" style="margin-top:10px; line-height:1.7;">কনফার্ম করলে অর্ডার সাথে সাথে সব বিস্তারিতসহ অ্যাডমিন প্যানেলে যাবে।</div>';
+  html += '<button class="btn btn-primary" id="callSaveBtn" onclick="saveCall()">সংরক্ষণ করুন</button>';
+  document.getElementById('callSheetBody').innerHTML = html;
+  document.getElementById('callOverlay').classList.remove('hidden');
+}
+async function saveCall(){
+  if(!callCtx) return;
+  const {id, result} = callCtx;
+  const note = (document.getElementById('callNote') || {}).value || '';
+  const remindAt = result === 'later' ? ((document.getElementById('callRemind') || {}).value || '') : '';
+  const chk = document.getElementById('notifyCustomerChk');
+  const btn = document.getElementById('callSaveBtn'); btn.disabled = true; btn.textContent = 'সংরক্ষণ হচ্ছে...';
+  let res;
+  try{
+    res = await apiFetch('/orders/' + id + '/call', { method:'POST', body: JSON.stringify({ result, note, remindAt, notify: chk ? chk.checked : true }) });
+  }catch(e){ toast(e.message); btn.disabled = false; btn.textContent = 'সংরক্ষণ করুন'; return; }
+  const idx = orders.findIndex(x=>x.id === id);
+  if(idx >= 0 && res){ const {sync, ...rest} = res; orders[idx] = Object.assign({}, orders[idx], rest); }
+  closeCallSheet();
+  renderOrders(); renderRecentOrders(); updateDashboardStats();
+  const msg = {confirmed:'কনফার্ম হয়েছে', later:'পরে নেবে — নোট রাখা হয়েছে', rejected:'রিজেক্ট করা হয়েছে', noanswer:'ধরেনি — চিহ্ন রাখা হয়েছে'}[result];
+  let extra = '';
+  if(res && res.sync && res.sync.synced) extra = ' — অ্যাডমিন প্যানেলে গেছে ✓';
+  else if(result === 'confirmed' && res && res.sync && res.sync.note) extra = ' — ⚠️ অ্যাডমিনে যায়নি: ' + res.sync.note;
+  toast(id + ': ' + msg + extra);
 }
 
 async function updateStatus(id, newStatus){
@@ -1855,7 +1997,7 @@ async function updateStatus(id, newStatus){
     res = await apiFetch('/orders/' + id, { method:'PATCH', body: JSON.stringify({ status:newStatus, notify }) });
   }catch(e){ toast(e.message); renderOrders(); return; }
   const o = orders.find(x=>x.id===id);
-  if(o){ o.status = newStatus; if(res){ o.notifyStatus = res.notifyStatus; o.notifyNote = res.notifyNote; } }
+  if(o){ o.status = newStatus; if(res){ o.notifyStatus = res.notifyStatus; o.notifyNote = res.notifyNote; o.fsSynced = res.fsSynced; o.syncNote = res.syncNote; } }
   renderOrders();
   renderRecentOrders();
   updateDashboardStats();
