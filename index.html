@@ -811,7 +811,7 @@
           <label class="pt-row"><input type="checkbox" id="postToTk" onchange="postTargetChanged()" disabled> 🎵 TikTok <span id="postToTkNote" class="pt-note">(সংযুক্ত নয়)</span></label>
           <label class="pt-row"><input type="checkbox" id="postToTg" onchange="postTargetChanged()" disabled> ✈️ Telegram চ্যানেল <span id="postToTgNote" class="pt-note">(সংযুক্ত নয়)</span></label>
         </div>
-        <div class="hint" style="margin-top:6px;">সময় ঠিক করলে Facebook নিজেই ঠিক সময়ে পোস্ট করে। Instagram, TikTok ও Telegram-এ সময় এলে আমাদের সার্ভার পোস্ট করে (UptimeRobot চালু থাকলে)। ভিডিও শুধু Facebook ও Instagram-এ যায়।</div>
+        <div class="hint" style="margin-top:6px;">সময় ঠিক করলে Facebook নিজেই ঠিক সময়ে পোস্ট করে। Instagram, TikTok ও Telegram-এ সময় এলে আমাদের সার্ভার পোস্ট করে (UptimeRobot চালু থাকলে)। ভিডিও চারটাতেই যায় (Telegram-এ সর্বোচ্চ ৫০ MB; TikTok অডিটের আগে শুধু আপনি দেখবেন)।</div>
         <button class="btn btn-primary" id="postConfirmBtn" onclick="confirmPost()">✅ নিশ্চিত করুন</button>
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
           <button class="btn btn-ghost" style="margin:0; flex:1; padding:11px 6px;" onclick="copyPostCaption()">📋 ক্যাপশন কপি</button>
@@ -3132,8 +3132,8 @@ function updatePostTargets(){
     else if(was && cb.dataset.prev) cb.checked = cb.dataset.prev === '1';
     if(note) note.textContent = okNote;
   };
-  setPt('postToTk', 'postToTkNote', tkOnFlag && !isVideo, tkAuditedFlag ? '' : '(অডিটের আগে শুধু আপনি দেখবেন)', isVideo ? '(ভিডিওতে এখনো নেই)' : '(সংযুক্ত নয়)', tkAutoDef);
-  setPt('postToTg', 'postToTgNote', tgPostFlag && !isVideo, '', isVideo ? '(ভিডিওতে এখনো নেই)' : (tgOnFlag ? '(চ্যানেল দেওয়া নেই)' : '(সংযুক্ত নয়)'), tgAutoDef);
+  setPt('postToTk', 'postToTkNote', tkOnFlag, tkAuditedFlag ? '' : '(অডিটের আগে শুধু আপনি দেখবেন)', '(সংযুক্ত নয়)', tkAutoDef);
+  setPt('postToTg', 'postToTgNote', tgPostFlag, '', (tgOnFlag ? '(চ্যানেল দেওয়া নেই)' : '(সংযুক্ত নয়)'), tgAutoDef);
   postTargetChanged();
 }
 
@@ -3142,7 +3142,7 @@ async function confirmPost(){
   if(!caption){ toast('ক্যাপশন লিখুন'); return; }
   const T = postTargets();
   if(!(T.fb || T.ig || T.tk || T.tg)){ toast('অন্তত একটা জায়গায় টিক দিন'); return; }
-  if(postVideoFile && !(T.fb || T.ig)){ toast('ভিডিও শুধু Facebook ও Instagram-এ যায় — একটায় টিক দিন'); return; }
+  if(postVideoFile && T.tg){ const mb = postVideoFile.size / 1048576; if(mb > 50){ toast('Telegram-এ ভিডিও সর্বোচ্চ ৫০ MB — ভিডিও ছোট করুন বা Telegram-এর টিক তুলে দিন'); return; } }
   const later = document.querySelector('input[name=postWhen]:checked').value === 'later';
   let scheduledAt = null;
   if(later){
@@ -3327,6 +3327,8 @@ async function submitVideoPost(caption, scheduledAt){
     const VT = postTargets();
     fd.append('postToInstagram', VT.ig ? 'true' : 'false');
     fd.append('postToFacebook', VT.fb ? 'true' : 'false');
+    fd.append('postToTelegram', VT.tg ? 'true' : 'false');
+    fd.append('postToTiktok', VT.tk ? 'true' : 'false');
     const thumb = await makeVideoThumb();
     if(thumb) fd.append('thumbData', thumb);
     await uploadPostVideo(fd, pct => { btn.textContent = 'ভিডিও আপলোড হচ্ছে... ' + pct + '%'; });
