@@ -404,6 +404,20 @@
   .mini-btn.ghost{background:#eef3f2; color:var(--teal-deep);}
   .int-card{background:linear-gradient(180deg,#fff9f1,#fff1e0); border:1px solid rgba(232,131,58,.3);}
 
+
+  .chat-bubble.owner{background:#fff3d6; color:#5a3d00; margin-left:auto; border-bottom-right-radius:5px; border:1px solid rgba(232,170,40,.45);}
+  .chat-bubble .bt{display:block; font-size:9.5px; opacity:.65; margin-top:4px;}
+  .chat-bubble .who{display:block; font-size:9.5px; font-weight:700; opacity:.75; margin-bottom:2px;}
+  .chat-scroll{max-height:340px; overflow-y:auto; display:flex; flex-direction:column; padding:2px;}
+  .reply-bar{position:sticky; bottom:-30px; margin:10px -18px -30px; padding:10px 14px 18px; background:linear-gradient(180deg,rgba(230,240,248,0),#e6f0f8 18%); }
+  .reply-box{display:flex; gap:8px; align-items:flex-end; background:#fff; border-radius:20px; padding:6px 6px 6px 14px; box-shadow:var(--shadow); border:1px solid var(--glass-brd);}
+  .reply-box textarea{flex:1; border:none; outline:none; resize:none; font:inherit; font-size:13px; max-height:110px; min-height:22px; padding:8px 0; background:transparent;}
+  .reply-send{width:40px; height:40px; border-radius:50%; border:none; background:var(--hero); color:#fff; font-size:17px; cursor:pointer; flex-shrink:0;}
+  .reply-send:disabled{opacity:.5;}
+  .reply-opt{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-dim); margin:6px 4px 0;}
+  .hit-line{font-size:11.5px; color:#0d6f9e; margin-top:3px; font-weight:600;}
+  .alt-name{font-size:11px; color:var(--ink-faint);}
+
   /* ---- ছোট ছোট উন্নতি ---- */
   :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
   .card{transition:border-color .2s ease, transform .15s ease, box-shadow .2s ease;}
@@ -684,11 +698,12 @@
       <div class="search-wrap">
         <div class="search-box">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5f6b81" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input id="custSearch" placeholder="কাস্টমার খুঁজুন..." oninput="renderCustomers()">
+          <input id="custSearch" placeholder="নাম, ফোন, পণ্য বা চ্যাটের যেকোনো লেখা খুঁজুন..." oninput="onCustSearch()">
         </div>
       </div>
       <div class="plat-filters" id="platFilters"></div>
       <div class="cust-sum" id="custSummary"></div>
+      <div class="cust-sum" style="margin-top:-4px;"><a style="color:var(--blue); cursor:pointer; font-weight:600;" onclick="refreshNames()">🔄 Messenger/Instagram কাস্টমারের আসল নাম আবার আনুন</a></div>
       <div id="customersList"></div>
     </section>
 
@@ -1731,14 +1746,14 @@ async function openCustomerProfile(id){
         </div>`).join('')
       : '<div class="empty">কোনো অর্ডার নেই</div>';
     const chatHtml = conversation.length
-      ? conversation.map(m => `<div class="chat-bubble ${m.role==='user'?'user':'assistant'}">${escHtml(m.text)}</div>`).join('')
+      ? chatBubblesHtml(conversation)
       : '<div class="empty">কোনো কথোপকথন নেই</div>';
     const it = customer.interest && (!customer.lastOrderAt || customer.interest.at > customer.lastOrderAt) ? customer.interest : null;
     const fu = customer.followUp && !customer.followUp.done ? customer.followUp : null;
     const link = chatLink(customer);
     content.innerHTML = `
       <div class="prof-head">${platformLogo(customer.platform, 34)}<h1 class="page-title" style="margin:0;">${escHtml(customerDisplayName(customer))}</h1></div>
-      <p class="page-sub">${customer.phone ? escHtml(customer.phone) + ' · ' : ''}${platformName(customer.platform)}${customer.platformId ? ' · আইডি ' + escHtml(String(customer.platformId)) : ''}</p>
+      ${altNameLine(customer)}<p class="page-sub">${customer.phone ? escHtml(customer.phone) + ' · ' : ''}${platformName(customer.platform)}${customer.platformId ? ' · আইডি ' + escHtml(String(customer.platformId)) : ''}</p>
       ${link ? `<a href="${link}" target="_blank" class="chat-open-link">${platformLogo(customer.platform, 16)}${platformName(customer.platform)}-এ চ্যাট খুলুন →</a>` : ''}
       ${it ? `<div class="card int-card" style="padding:11px 14px; margin-top:10px;"><div class="int-line" style="margin:0;">🔥 আগ্রহ দেখিয়েছেন: <b>${escHtml(it.product)}</b> · ${timeAgoBn(it.at)} — কেনেননি</div></div>` : ''}
       ${fu ? `<div class="card" style="padding:11px 14px; margin-top:10px;"><div class="fu-line" style="margin:0;">⏰ AI ফলো-আপ করবে: ${fuLabel(fu)}</div><span class="mini-btn ghost" onclick="cancelFollowUp('${customer.id}')">ফলো-আপ বাতিল</span></div>` : ''}
@@ -1756,12 +1771,59 @@ async function openCustomerProfile(id){
       <span class="mini-btn" onclick="saveCustNote('${customer.id}')">নোট সেভ করুন</span>
       <div class="section-head"><h2>অর্ডার হিস্টোরি</h2></div>
       ${ordersHtml}
-      <div class="section-head"><h2>কথোপকথন</h2></div>
-      <div style="display:flex; flex-direction:column;">${chatHtml}</div>
+      <div class="section-head"><h2>কথোপকথন</h2><a onclick="toggleAi('${customer.id}'); setTimeout(()=>openCustomerProfile('${customer.id}'),400)">${customer.ai ? '⏸ AI বন্ধ করুন' : '▶ AI চালু করুন'}</a></div>
+      <div class="chat-scroll" id="profChat">${chatHtml}</div>
+      ${customer.platform === 'website' ? `<div class="empty">ওয়েবসাইট কাস্টমারকে এখান থেকে মেসেজ যায় না${customer.phone ? ' — ওপরের নম্বরে WhatsApp/কল করুন' : ''}</div>` : `
+      <div class="reply-bar">
+        <div class="reply-box"><textarea id="replyText" rows="1" placeholder="${escHtml(platformName(customer.platform))}-এ রিপ্লাই লিখুন..." oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea><button class="reply-send" id="replySendBtn" onclick="sendReply('${customer.id}')">➤</button></div>
+        <label class="reply-opt"><input type="checkbox" id="replyPause" ${customer.ai ? 'checked' : ''}> পাঠানোর পর এই কাস্টমারের AI বন্ধ রাখুন (দুজনে একসাথে উত্তর দেবে না)</label>
+      </div>`}
     `;
+    const pc = document.getElementById('profChat'); if(pc) pc.scrollTop = pc.scrollHeight;
+    startProfilePoll(customer.id);
   }catch(e){
     content.innerHTML = `<div class="empty">লোড করা যায়নি: ${escHtml(e.message)}</div>`;
   }
+}
+function chatBubblesHtml(conv){
+  return conv.map(m => {
+    const owner = m.role !== 'user' && m.by === 'owner';
+    const cls = m.role === 'user' ? 'user' : owner ? 'owner' : 'assistant';
+    const who = m.role === 'user' ? '' : owner ? '<span class="who">আপনি</span>' : '<span class="who">AI</span>';
+    const t = m.ts ? `<span class="bt">${new Date(m.ts).toLocaleString('bn-BD',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})}</span>` : '';
+    return `<div class="chat-bubble ${cls}">${who}${escHtml(m.text)}${t}</div>`;
+  }).join('');
+}
+let profPoll = null, profPollId = '';
+function startProfilePoll(id){
+  clearInterval(profPoll); profPollId = id;
+  profPoll = setInterval(async () => {
+    if(document.getElementById('profileOverlay').classList.contains('hidden') || profPollId !== id){ clearInterval(profPoll); return; }
+    try{
+      const d = await apiFetch('/customers/' + id);
+      const box = document.getElementById('profChat'); if(!box) return;
+      const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+      box.innerHTML = d.conversation.length ? chatBubblesHtml(d.conversation) : '<div class="empty">কোনো কথোপকথন নেই</div>';
+      if(atBottom) box.scrollTop = box.scrollHeight;
+    }catch(e){}
+  }, 7000);
+}
+async function sendReply(id){
+  const ta = document.getElementById('replyText'); const btn = document.getElementById('replySendBtn');
+  const text = (ta.value || '').trim(); if(!text) return;
+  const pause = !!(document.getElementById('replyPause') || {}).checked;
+  btn.disabled = true;
+  try{
+    const r = await apiFetch('/customers/' + id + '/reply', { method:'POST', body: JSON.stringify({ text, pauseAI: pause }) });
+    ta.value = ''; ta.style.height = 'auto';
+    const c = customers.find(x => x.id === id); if(c){ c.ai = r.ai; }
+    toast(r.ai ? 'পাঠানো হয়েছে ✓' : 'পাঠানো হয়েছে ✓ — এই কাস্টমারের AI বন্ধ');
+    const d = await apiFetch('/customers/' + id);
+    const box = document.getElementById('profChat');
+    if(box){ box.innerHTML = chatBubblesHtml(d.conversation); box.scrollTop = box.scrollHeight; }
+    renderCustomers();
+  }catch(e){ toast(e.message); }
+  btn.disabled = false;
 }
 async function saveCustNote(id){
   const v = (document.getElementById('custNote')||{}).value || '';
@@ -1774,6 +1836,7 @@ async function cancelFollowUp(id){
 }
 
 function closeProfile(){
+  clearInterval(profPoll);
   document.getElementById('profileOverlay').classList.add('hidden');
 }
 
@@ -1871,8 +1934,16 @@ function platformName(p){
 }
 function customerDisplayName(c){
   if(c.name && c.name !== 'অজানা কাস্টমার') return c.name;
+  if(c.username) return '@' + c.username;
   const plat = ({facebook:'Messenger',whatsapp:'WhatsApp',instagram:'Instagram',telegram:'Telegram',tiktok:'TikTok',email:'ইমেইল'})[c.platform] || 'কাস্টমার';
   return plat + ' ···' + String(c.platformId || c.id || '').slice(-4);
+}
+// নামের নিচের ছোট লাইন: @ইউজারনেম, আর অর্ডারে ভিন্ন নাম দিলে সেটা (মূল নাম কখনো বদলায় না)
+function altNameLine(c){
+  const parts = [];
+  if(c.username && customerDisplayName(c) !== '@' + c.username) parts.push('@' + escHtml(c.username));
+  if(c.orderName && c.orderName !== c.name) parts.push('অর্ডারে নাম: ' + escHtml(c.orderName));
+  return parts.length ? `<div class="alt-name">${parts.join(' · ')}</div>` : '';
 }
 
 function notConnectedMsg(){
@@ -2108,6 +2179,25 @@ function chatLink(c){
   return null;
 }
 
+let searchQ = '', searchHits = null, searchTimer = null;
+function onCustSearch(){
+  const q = document.getElementById('custSearch').value.trim().toLowerCase();
+  renderCustomers();          // সাথে সাথে স্থানীয়ভাবে ছেঁকে দেখাই
+  clearTimeout(searchTimer);
+  if(!q){ searchQ = ''; searchHits = null; return; }
+  searchTimer = setTimeout(async () => {
+    try{
+      const hits = await apiFetch('/customers-search?q=' + encodeURIComponent(q));
+      if(document.getElementById('custSearch').value.trim().toLowerCase() !== q) return;
+      searchQ = q; searchHits = hits; renderCustomers();
+    }catch(e){ /* স্থানীয় ফলাফলই থাকুক */ }
+  }, 300);
+}
+async function refreshNames(){
+  toast('আসল নাম আনা হচ্ছে...');
+  try{ const r = await apiFetch('/customers-refresh-names', { method:'POST', body:'{}' }); toast(`${r.updated} জনের নাম ঠিক হয়েছে` + (r.failed ? `, ${r.failed} জনেরটা পাওয়া যায়নি` : '')); loadCustomers(); }
+  catch(e){ toast(e.message); }
+}
 function renderCustomers(){
   const wrap = document.getElementById('customersList');
   if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
@@ -2118,7 +2208,16 @@ function renderCustomers(){
   const intMap = {}; interested.forEach(i => { intMap[i.id] = i; });
   let base = custPlat === 'hot' ? customers.filter(c => hotIds.has(c.id)) : (custPlat === 'all' ? customers : customers.filter(c => c.platform === custPlat));
   if(custPlat === 'hot') base = base.slice().sort((a,b)=> String((intMap[b.id]||{}).interest?.at||'').localeCompare(String((intMap[a.id]||{}).interest?.at||'')));
-  let filtered = base.filter(c=> !q || customerDisplayName(c).toLowerCase().includes(q) || String(c.phone||'').includes(q));
+  let filtered;
+  if(q){
+    if(searchQ === q && searchHits){
+      const order = {}; searchHits.forEach((h,i)=>{ order[h.id] = i; });
+      filtered = base.filter(c => order[c.id] !== undefined).sort((a,b)=> order[a.id]-order[b.id]);
+    } else {
+      filtered = base.filter(c=> customerDisplayName(c).toLowerCase().includes(q) || String(c.phone||'').includes(q) || String(c.username||'').toLowerCase().includes(q));
+    }
+  } else filtered = base;
+  const hitMap = {}; if(q && searchQ === q && searchHits) searchHits.forEach(h => { hitMap[h.id] = h; });
   const sum = document.getElementById('custSummary');
   if(sum){
     const label = custPlat === 'all' ? 'সব প্ল্যাটফর্ম' : custPlat === 'hot' ? 'আগ্রহী (কেনেনি)' : platformName(custPlat);
@@ -2144,8 +2243,10 @@ function renderCustomers(){
       <div class="av-wrap">${avatar}<span class="plat-badge">${platformLogo(c.platform, 14)}</span></div>
       <div class="row-main">
         <div class="t1 cust-name-link" onclick="openCustomerProfile('${c.id}')">${escHtml(customerDisplayName(c))}</div>
+        ${altNameLine(c)}
         <div class="t2">${c.phone ? escHtml(c.phone) + ' · ' : ''}<span class="plat-chip">${platformLogo(c.platform, 13)}${platformLabel}</span> · অর্ডার ${(st.total ?? c.orders ?? 0).toLocaleString('bn-BD')}${st.spent ? ' · কিনেছেন ৳' + Number(st.spent).toLocaleString('bn-BD') : ''}</div>
         <div class="t2" style="color:var(--ink-faint);">${c.platformId ? 'আইডি: ' + escHtml(String(c.platformId).slice(-10)) : ''}${c.lastMessageAt ? ' · ' + timeAgoBn(c.lastMessageAt) : ''}</div>
+        ${hitMap[c.id] && hitMap[c.id].why !== 'নাম' ? `<div class="hit-line">🔎 মিলেছে (${escHtml(hitMap[c.id].why)}): ${escHtml(hitMap[c.id].snippet)}</div>` : ''}
         ${it ? `<div class="int-line">🔥 আগ্রহী: ${escHtml(it.interest.product)} (${timeAgoBn(it.interest.at)})</div>` : ''}
         ${fu ? `<div class="fu-line">⏰ ফলো-আপ: ${fuLabel(fu)}</div>` : ''}
         ${c.needsHuman ? `<div class="t2" style="color:var(--coral); font-weight:600;">🙋 মানুষের অপেক্ষায়: ${escHtml(c.needsHumanReason||'')} <span style="text-decoration:underline; cursor:pointer;" onclick="markHandled('${c.id}')">দেখেছি ✓</span></div>` : ''}
