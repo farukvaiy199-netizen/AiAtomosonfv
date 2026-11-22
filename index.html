@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
+<meta name="robots" content="noindex, nofollow">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>Faruk's SmartBiz — Admin Dashboard</title>
@@ -380,6 +381,29 @@
   .cust-name-link{cursor:pointer;}
   .prof-head{display:flex; align-items:center; gap:12px; margin:2px 0 4px;}
 
+
+  /* ---- কাস্টমার ম্যানেজমেন্ট (প্ল্যাটফর্ম ফিল্টার, প্রোফাইল-হিসাব, আগ্রহী তালিকা) ---- */
+  .plat-filters{display:flex; gap:6px; overflow-x:auto; padding:2px 2px 10px; margin:0 -2px 6px; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+  .plat-filters::-webkit-scrollbar{display:none;}
+  .pf-btn{position:relative; flex:0 0 auto; min-width:40px; height:46px; padding:0 6px; border-radius:14px; border:1.5px solid var(--glass-brd); background:#fff; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; box-shadow:var(--shadow); font-weight:700; font-size:12px; color:var(--ink-dim);}
+  .pf-btn.on{border-color:var(--teal); background:linear-gradient(180deg,#f2faf7,#e3f3ee); box-shadow:0 6px 16px -8px rgba(15,107,87,.55); color:var(--teal-deep);}
+  .pf-btn .pf-n{position:absolute; top:-6px; right:-4px; min-width:19px; height:19px; padding:0 5px; border-radius:10px; background:var(--hero); color:#fff; font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;}
+  .pf-btn.hot.on{border-color:#e8833a; background:linear-gradient(180deg,#fff6ec,#ffe9d2); color:#b85a14;}
+  .pf-btn.hot .pf-n{background:#e8833a;}
+  .cust-sum{font-size:11.5px; color:var(--ink-faint); margin:0 2px 10px;}
+  .int-line{font-size:11.5px; color:#b85a14; font-weight:600; margin-top:3px;}
+  .fu-line{font-size:11.5px; color:#0d6f9e; font-weight:600; margin-top:3px;}
+  .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0 4px;}
+  .stat-box{background:#fff; border-radius:14px; padding:10px 6px; text-align:center; box-shadow:var(--shadow); border:1px solid var(--glass-brd);}
+  .stat-box b{display:block; font-size:17px; color:var(--teal-deep);}
+  .stat-box span{font-size:10.5px; color:var(--ink-faint); font-weight:600;}
+  .stat-box.big{grid-column:span 3; background:var(--hero); border:none;}
+  .stat-box.big b{color:#fff; font-size:22px;} .stat-box.big span{color:rgba(255,255,255,.85);}
+  .note-area{width:100%; min-height:74px; border-radius:14px; border:1px solid var(--glass-brd); padding:10px 12px; font:inherit; font-size:12.5px; background:#fff; resize:vertical; box-sizing:border-box;}
+  .mini-btn{display:inline-block; margin-top:8px; padding:7px 14px; border-radius:20px; border:none; background:var(--hero); color:#fff; font-weight:700; font-size:11.5px; cursor:pointer;}
+  .mini-btn.ghost{background:#eef3f2; color:var(--teal-deep);}
+  .int-card{background:linear-gradient(180deg,#fff9f1,#fff1e0); border:1px solid rgba(232,131,58,.3);}
+
   /* ---- ছোট ছোট উন্নতি ---- */
   :focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
   .card{transition:border-color .2s ease, transform .15s ease, box-shadow .2s ease;}
@@ -655,7 +679,7 @@
     <!-- ================= CUSTOMERS ================= -->
     <section id="customers">
       <h1 class="page-title">কাস্টমার সমূহ</h1>
-      <p class="page-sub">AI কথোপকথন নিয়ন্ত্রণ করুন</p>
+      <p class="page-sub">কোন প্ল্যাটফর্ম থেকে কে মেসেজ দিয়েছে — সব এক জায়গায়</p>
 
       <div class="search-wrap">
         <div class="search-box">
@@ -663,6 +687,8 @@
           <input id="custSearch" placeholder="কাস্টমার খুঁজুন..." oninput="renderCustomers()">
         </div>
       </div>
+      <div class="plat-filters" id="platFilters"></div>
+      <div class="cust-sum" id="custSummary"></div>
       <div id="customersList"></div>
     </section>
 
@@ -1692,30 +1718,59 @@ async function openCustomerProfile(id){
   try{
     const data = await apiFetch('/customers/' + id);
     const { customer, orders, conversation } = data;
+    const st = data.stats || { total:0, delivered:0, cancelled:0, pending:0, spent:0, placedValue:0 };
+    const bn = n => Number(n||0).toLocaleString('bn-BD');
     const ordersHtml = orders.length
       ? orders.map(o => `
         <div class="card row-card" style="margin-bottom:8px;">
           <div class="row-main">
-            <div class="t1">${o.product} x${o.qty}</div>
-            <div class="t2">${o.id} · ৳${(o.price||0)*(o.qty||1)}</div>
+            <div class="t1">${escHtml(o.product)} x${bn(o.qty)}</div>
+            <div class="t2">${escHtml(o.id)} · ৳${bn((o.price||0)*(o.qty||1))} · ${timeAgoBn(o.createdAt)}</div>
           </div>
           ${statusBadge(o.status)}
         </div>`).join('')
       : '<div class="empty">কোনো অর্ডার নেই</div>';
     const chatHtml = conversation.length
-      ? conversation.map(m => `<div class="chat-bubble ${m.role==='user'?'user':'assistant'}">${m.text}</div>`).join('')
+      ? conversation.map(m => `<div class="chat-bubble ${m.role==='user'?'user':'assistant'}">${escHtml(m.text)}</div>`).join('')
       : '<div class="empty">কোনো কথোপকথন নেই</div>';
+    const it = customer.interest && (!customer.lastOrderAt || customer.interest.at > customer.lastOrderAt) ? customer.interest : null;
+    const fu = customer.followUp && !customer.followUp.done ? customer.followUp : null;
+    const link = chatLink(customer);
     content.innerHTML = `
-      <div class="prof-head">${platformLogo(customer.platform, 34)}<h1 class="page-title" style="margin:0;">${customer.name}</h1></div>
-      <p class="page-sub">${customer.phone || ''} ${customer.phone ? '· ' : ''}${platformName(customer.platform)}</p>
+      <div class="prof-head">${platformLogo(customer.platform, 34)}<h1 class="page-title" style="margin:0;">${escHtml(customerDisplayName(customer))}</h1></div>
+      <p class="page-sub">${customer.phone ? escHtml(customer.phone) + ' · ' : ''}${platformName(customer.platform)}${customer.platformId ? ' · আইডি ' + escHtml(String(customer.platformId)) : ''}</p>
+      ${link ? `<a href="${link}" target="_blank" class="chat-open-link">${platformLogo(customer.platform, 16)}${platformName(customer.platform)}-এ চ্যাট খুলুন →</a>` : ''}
+      ${it ? `<div class="card int-card" style="padding:11px 14px; margin-top:10px;"><div class="int-line" style="margin:0;">🔥 আগ্রহ দেখিয়েছেন: <b>${escHtml(it.product)}</b> · ${timeAgoBn(it.at)} — কেনেননি</div></div>` : ''}
+      ${fu ? `<div class="card" style="padding:11px 14px; margin-top:10px;"><div class="fu-line" style="margin:0;">⏰ AI ফলো-আপ করবে: ${fuLabel(fu)}</div><span class="mini-btn ghost" onclick="cancelFollowUp('${customer.id}')">ফলো-আপ বাতিল</span></div>` : ''}
+      <div class="stat-grid">
+        <div class="stat-box"><b>${bn(st.total)}</b><span>মোট অর্ডার</span></div>
+        <div class="stat-box"><b>${bn(st.delivered)}</b><span>রিসিভ করেছেন</span></div>
+        <div class="stat-box"><b>${bn(st.cancelled)}</b><span>ফিরিয়ে দিয়েছেন/বাতিল</span></div>
+        <div class="stat-box"><b>${bn(st.pending)}</b><span>চলমান</span></div>
+        <div class="stat-box"><b>৳${bn(st.placedValue)}</b><span>মোট অর্ডারের দাম</span></div>
+        <div class="stat-box"><b>${customer.ai ? 'চালু' : 'বন্ধ'}</b><span>AI</span></div>
+        <div class="stat-box big"><b>৳${bn(st.spent)}</b><span>আমাদের কাছ থেকে মোট কিনেছেন (পৌঁছে গেছে এমন অর্ডার)</span></div>
+      </div>
+      <div class="section-head"><h2>আমার নোট</h2></div>
+      <textarea class="note-area" id="custNote" placeholder="এই কাস্টমার সম্পর্কে নোট লিখুন — যেমন: ফোনে কথা হয়েছে, শুক্রবার ডেলিভারি চায়...">${escHtml(customer.note || '')}</textarea>
+      <span class="mini-btn" onclick="saveCustNote('${customer.id}')">নোট সেভ করুন</span>
       <div class="section-head"><h2>অর্ডার হিস্টোরি</h2></div>
       ${ordersHtml}
       <div class="section-head"><h2>কথোপকথন</h2></div>
       <div style="display:flex; flex-direction:column;">${chatHtml}</div>
     `;
   }catch(e){
-    content.innerHTML = `<div class="empty">লোড করা যায়নি: ${e.message}</div>`;
+    content.innerHTML = `<div class="empty">লোড করা যায়নি: ${escHtml(e.message)}</div>`;
   }
+}
+async function saveCustNote(id){
+  const v = (document.getElementById('custNote')||{}).value || '';
+  try{ await apiFetch('/customers/' + id + '/note', { method:'PATCH', body: JSON.stringify({ note: v }) }); toast('নোট সেভ হয়েছে ✓'); }
+  catch(e){ toast(e.message); }
+}
+async function cancelFollowUp(id){
+  try{ await apiFetch('/customers/' + id + '/followup', { method:'DELETE' }); toast('ফলো-আপ বাতিল হয়েছে'); openCustomerProfile(id); loadCustomers(); }
+  catch(e){ toast(e.message); }
 }
 
 function closeProfile(){
@@ -2007,13 +2062,40 @@ async function updateStatus(id, newStatus){
   toast(`${id} → ${newStatus}${extra}`);
 }
 
+let custPlat = 'all';        // 'all' | platform | 'hot' (আগ্রহী)
+let interested = [];         // আগ্রহ দেখিয়েছে কিন্তু কেনেনি
 async function loadCustomers(){
   if(!apiConnected() || !isLoggedIn()){ renderCustomers(); return; }
   try{
     customers = await apiFetch('/customers');
   }catch(e){ customers = []; }
+  try{ interested = await apiFetch('/customers-interested'); }catch(e){ interested = []; }
   renderCustomers();
   updateDashboardStats();
+}
+function setCustPlat(p){ custPlat = p; renderCustomers(); }
+function timeAgoBn(iso){
+  if(!iso) return '';
+  const t = new Date(iso).getTime(); if(!t) return '';
+  const m = Math.floor((Date.now() - t)/60000);
+  if(m < 1) return 'এইমাত্র';
+  if(m < 60) return m.toLocaleString('bn-BD') + ' মিনিট আগে';
+  const h = Math.floor(m/60); if(h < 24) return h.toLocaleString('bn-BD') + ' ঘণ্টা আগে';
+  const d = Math.floor(h/24); if(d < 30) return d.toLocaleString('bn-BD') + ' দিন আগে';
+  return new Date(iso).toLocaleDateString('bn-BD');
+}
+function fuLabel(f){
+  if(!f || f.done) return '';
+  return new Date(f.at).toLocaleString('bn-BD', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' });
+}
+function renderPlatFilters(){
+  const box = document.getElementById('platFilters'); if(!box) return;
+  const list = ['facebook','whatsapp','instagram','telegram','website','tiktok'];
+  const cnt = {}; customers.forEach(c => { cnt[c.platform] = (cnt[c.platform]||0) + 1; });
+  const btn = (key, inner, n, extra) => `<div class="pf-btn ${extra||''} ${custPlat===key?'on':''}" onclick="setCustPlat('${key}')">${inner}${n ? `<span class="pf-n">${n.toLocaleString('bn-BD')}</span>` : ''}</div>`;
+  box.innerHTML = btn('all', 'সব', customers.length)
+    + list.map(p => btn(p, platformLogo(p, 24), cnt[p]||0)).join('')
+    + btn('hot', '🔥', interested.length, 'hot');
 }
 
 function chatLink(c){
@@ -2030,10 +2112,20 @@ function renderCustomers(){
   const wrap = document.getElementById('customersList');
   if(!apiConnected()){ wrap.innerHTML = notConnectedMsg(); return; }
   if(!isLoggedIn()){ wrap.innerHTML = notLoggedInMsg(); return; }
+  renderPlatFilters();
   const q = document.getElementById('custSearch').value.trim().toLowerCase();
-  let filtered = customers.filter(c=> !q || customerDisplayName(c).toLowerCase().includes(q));
+  const hotIds = new Set(interested.map(i => i.id));
+  const intMap = {}; interested.forEach(i => { intMap[i.id] = i; });
+  let base = custPlat === 'hot' ? customers.filter(c => hotIds.has(c.id)) : (custPlat === 'all' ? customers : customers.filter(c => c.platform === custPlat));
+  if(custPlat === 'hot') base = base.slice().sort((a,b)=> String((intMap[b.id]||{}).interest?.at||'').localeCompare(String((intMap[a.id]||{}).interest?.at||'')));
+  let filtered = base.filter(c=> !q || customerDisplayName(c).toLowerCase().includes(q) || String(c.phone||'').includes(q));
+  const sum = document.getElementById('custSummary');
+  if(sum){
+    const label = custPlat === 'all' ? 'সব প্ল্যাটফর্ম' : custPlat === 'hot' ? 'আগ্রহী (কেনেনি)' : platformName(custPlat);
+    sum.textContent = `${label}: ${filtered.length.toLocaleString('bn-BD')} জন কাস্টমার` + (custPlat==='hot' ? ' — এদের সাথে কথা বলে অর্ডার পাওয়ার সুযোগ আছে' : '');
+  }
   if(!filtered.length){
-    wrap.innerHTML = `<div class="empty">এখনো কোনো কাস্টমার মেসেজ করেনি</div>`;
+    wrap.innerHTML = `<div class="empty">${custPlat==='all' ? 'এখনো কোনো কাস্টমার মেসেজ করেনি' : custPlat==='hot' ? 'এখন কেউ আগ্রহী অবস্থায় বাকি নেই 🎉' : 'এই প্ল্যাটফর্ম থেকে এখনো কেউ মেসেজ করেনি'}</div>`;
     return;
   }
   wrap.innerHTML = filtered.map(c=>{
@@ -2042,14 +2134,20 @@ function renderCustomers(){
     const platformLabel = platformName(c.platform);
     const waNum = (c.platform === 'website' && c.phone) ? c.phone.replace(/[^0-9]/g,'') : '';
     const avatar = c.photoUrl
-      ? `<img src="${c.photoUrl}" style="width:40px;height:40px;border-radius:11px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div class=row-avatar>${initials(customerDisplayName(c))}</div>'">`
+      ? `<img src="${escHtml(c.photoUrl)}" style="width:40px;height:40px;border-radius:11px;object-fit:cover;flex-shrink:0;" onerror="this.outerHTML='<div class=row-avatar>${initials(customerDisplayName(c))}</div>'">`
       : `<div class="row-avatar">${initials(customerDisplayName(c))}</div>`;
+    const st = c.stats || {};
+    const it = intMap[c.id];
+    const fu = c.followUp && !c.followUp.done ? c.followUp : null;
     return `
     <div class="card row-card">
       <div class="av-wrap">${avatar}<span class="plat-badge">${platformLogo(c.platform, 14)}</span></div>
       <div class="row-main">
         <div class="t1 cust-name-link" onclick="openCustomerProfile('${c.id}')">${escHtml(customerDisplayName(c))}</div>
-        <div class="t2">${c.phone ? c.phone + ' · ' : ''}<span class="plat-chip">${platformLogo(c.platform, 13)}${platformLabel}</span> · মোট অর্ডার ${c.orders}</div>
+        <div class="t2">${c.phone ? escHtml(c.phone) + ' · ' : ''}<span class="plat-chip">${platformLogo(c.platform, 13)}${platformLabel}</span> · অর্ডার ${(st.total ?? c.orders ?? 0).toLocaleString('bn-BD')}${st.spent ? ' · কিনেছেন ৳' + Number(st.spent).toLocaleString('bn-BD') : ''}</div>
+        <div class="t2" style="color:var(--ink-faint);">${c.platformId ? 'আইডি: ' + escHtml(String(c.platformId).slice(-10)) : ''}${c.lastMessageAt ? ' · ' + timeAgoBn(c.lastMessageAt) : ''}</div>
+        ${it ? `<div class="int-line">🔥 আগ্রহী: ${escHtml(it.interest.product)} (${timeAgoBn(it.interest.at)})</div>` : ''}
+        ${fu ? `<div class="fu-line">⏰ ফলো-আপ: ${fuLabel(fu)}</div>` : ''}
         ${c.needsHuman ? `<div class="t2" style="color:var(--coral); font-weight:600;">🙋 মানুষের অপেক্ষায়: ${escHtml(c.needsHumanReason||'')} <span style="text-decoration:underline; cursor:pointer;" onclick="markHandled('${c.id}')">দেখেছি ✓</span></div>` : ''}
         ${link ? `<a href="${link}" target="_blank" class="chat-open-link">${platformLogo(c.platform, 16)}${linkLabel}-এ চ্যাট খুলুন →</a>` : ''}
         ${waNum ? `<a href="https://wa.me/${waNum}" target="_blank" class="chat-open-link">${platformLogo('whatsapp', 16)}এই নম্বরে WhatsApp করুন →</a>` : ''}
