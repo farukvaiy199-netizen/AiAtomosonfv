@@ -549,6 +549,103 @@
   .shop-btns{display:flex; gap:8px; margin-top:12px;}
   .shop-btns .btn{margin:0; flex:1;}
 </style>
+<style id="deskCss">
+/* ================= পিসি/ল্যাপটপ ডিজাইন — শুধু ১০২৪px বা তার বেশি চওড়া স্ক্রিনে। ফোনের ডিজাইন অপরিবর্তিত ================= */
+@media (min-width:1024px){
+  :root{ --sb:252px; }
+  body{ display:block; background:linear-gradient(135deg,#eaf6f2 0%, #e3eff6 55%, #eef0fb 100%); background-attachment:fixed; }
+  .app{ max-width:none; width:auto; margin:0; padding-left:var(--sb); box-shadow:none; }
+
+  /* ---- বাঁ পাশের সাইডবার (নিচের মেনু এখানে এসে দাঁড়ায়) ---- */
+  nav.bottomnav{
+    position:fixed; top:0; left:0; bottom:0; transform:none; width:var(--sb); max-width:none;
+    flex-direction:column; justify-content:flex-start; gap:6px; padding:26px 16px 22px;
+    background:linear-gradient(180deg,#0a4d40 0%, #0f6b57 60%, #0c5a4a 100%);
+    border:none; border-radius:0 30px 30px 0; box-shadow:18px 0 50px -24px rgba(10,60,50,.55);
+    backdrop-filter:none; -webkit-backdrop-filter:none; z-index:60; overflow-y:auto;
+  }
+  nav.bottomnav::before{
+    content:"Faruk's SmartBiz"; display:flex; align-items:center; min-height:46px; margin:0 6px 26px; padding-left:56px;
+    background:url('icon-192.png') no-repeat left center / 44px 44px; border-radius:12px;
+    color:#fff; font-size:17.5px; font-weight:700; letter-spacing:.2px; line-height:1.25;
+  }
+  nav.bottomnav::after{
+    content:"● AI অটোমেশন সক্রিয়"; margin:auto 8px 0; padding:11px 14px; border-radius:14px;
+    background:rgba(255,255,255,.09); color:#9ff0d6; font-size:12.5px; font-weight:600; text-align:center;
+  }
+  .navbtn{
+    flex:none; flex-direction:row; justify-content:flex-start; gap:14px; width:100%;
+    padding:13px 16px; border-radius:15px; font-size:15px; font-weight:600; color:rgba(255,255,255,.74);
+    transition:background .18s, color .18s, transform .18s;
+  }
+  .navbtn svg{ width:21px; height:21px; flex-shrink:0; }
+  .navbtn:hover{ background:rgba(255,255,255,.10); color:#fff; transform:translateX(3px); }
+  .navbtn.active{ background:#fff; color:#0a4d40; font-weight:700; box-shadow:0 10px 24px -10px rgba(0,0,0,.45); transform:none; }
+  .navbtn .nav-badge, .navbtn .badge{ position:static; margin-left:auto; }
+
+  /* ---- উপরের বার: শুধু ডানে ঘণ্টা ও লক ---- */
+  .topbar{ position:sticky; top:0; background:rgba(238,246,244,.78); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-radius:0; box-shadow:none; padding:18px 44px 14px; justify-content:flex-end; z-index:40; }
+  .topbar .brand{ display:none; }
+  .topbar-actions{ gap:12px; }
+  .bell, .auth-btn{ width:46px; height:46px; box-shadow:0 8px 20px -10px rgba(16,70,60,.4); cursor:pointer; transition:transform .18s; }
+  .bell:hover, .auth-btn:hover{ transform:translateY(-2px); }
+
+  /* ---- মূল কনটেন্ট: চওড়া, মাঝখানে ---- */
+  main{ max-width:1280px; width:100%; margin:0 auto; padding:4px 44px 70px; }
+  .page-title{ font-size:32px; letter-spacing:-.2px; }
+  .page-sub{ font-size:14.5px; margin-bottom:22px; }
+  .section-head h2{ font-size:20px; }
+  .card{ border-radius:22px; }
+  .card:hover{ box-shadow:0 18px 40px -22px rgba(16,70,60,.35); }
+  .btn{ cursor:pointer; }
+  .chip{ cursor:pointer; padding:8px 16px; font-size:13px; }
+
+  /* ---- ড্যাশবোর্ড: রেভিনিউ বাঁয়ে, কার্ড ডানে; নিচে রিপোর্ট ও সাম্প্রতিক অর্ডার পাশাপাশি ---- */
+  #dashboard.active{ display:grid; grid-template-columns:repeat(12, minmax(0,1fr)); column-gap:26px; align-items:start; }
+  #dashboard > .page-title, #dashboard > .page-sub, #dashboard > #lockedNoteDashboard{ grid-column:1 / -1; }
+  #dashboard > .revenue-card{ grid-column:1 / span 5; grid-row:4; margin:0; min-height:100%; padding:28px 26px; }
+  #dashboard > .revenue-card .value{ font-size:46px; }
+  #dashboard > .revenue-card{ display:flex; flex-direction:column; justify-content:space-between; }
+  #dashboard > .revenue-card svg{ width:100%; height:auto; max-height:150px; }
+  #dashboard > .grid2{ grid-column:6 / -1; grid-row:4; gap:18px; margin:0; align-self:stretch; }
+  #dashboard > .grid2 .stat{ padding:22px 22px; display:flex; flex-direction:column; justify-content:center; }
+  #dashboard > .grid2 .stat .value{ font-size:34px; }
+  #dashboard > .section-head:nth-child(6){ grid-column:1 / span 6; grid-row:5; margin-top:34px; }
+  #dashboard > #reportContent{ grid-column:1 / span 6; grid-row:6; }
+  #dashboard > .section-head:nth-child(8){ grid-column:7 / -1; grid-row:5; margin-top:34px; }
+  #dashboard > #recentOrdersList{ grid-column:7 / -1; grid-row:6; }
+
+  /* ---- অর্ডার ও কাস্টমার তালিকা: দুই কলাম ---- */
+  #ordersList, #customersList, #recentOrdersList{ }
+  #ordersList, #customersList{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:20px; align-items:start; }
+  #ordersList > *, #customersList > *{ margin-bottom:14px; }
+  #ordersList > .empty, #customersList > .empty, #ordersList > p, #customersList > p{ grid-column:1 / -1; }
+  #orders .search-wrap, #customers .search-wrap{ max-width:620px; }
+  #orders > .btn-ghost{ width:auto; display:inline-flex; padding:11px 20px; margin-right:12px; }
+  #orders .filter-chips, #customers .plat-filters{ flex-wrap:wrap; overflow:visible; }
+
+  /* ---- বাকি পাতা (ব্রডকাস্ট, AI, পোস্ট, সেটিংস): পড়ার মতো মাঝারি চওড়া ---- */
+  #broadcast, #aitrain, #posts, #emaillog, #settings{ max-width:940px; }
+  #settings .card, #aitrain .card{ border-radius:24px; }
+  .set-item{ padding:17px 20px; }
+
+  /* ---- পপ-আপ: ফোনের নিচের শীট → পিসিতে মাঝখানের কার্ড; প্রোফাইল/নোটিফিকেশন → ডান পাশের প্যানেল ---- */
+  .profile-overlay, .detail-overlay{ align-items:center; }
+  .profile-sheet, .detail-sheet{ max-width:540px; border-radius:30px; max-height:88vh; box-shadow:0 40px 90px -30px rgba(10,50,42,.6); }
+  .sheet-grab{ display:none; }
+  #profileOverlay, #notifOverlay, #stockOverlay, .detail-overlay{ justify-content:flex-end; align-items:stretch; }
+  #profileOverlay .profile-sheet, #notifOverlay .profile-sheet, #stockOverlay .profile-sheet, .detail-overlay .detail-sheet{
+    max-width:600px; width:600px; max-height:none; height:100vh; border-radius:30px 0 0 30px; padding:26px 26px 30px;
+  }
+  .chat-bubble{ font-size:13.5px; max-width:74%; }
+  .toast{ bottom:34px; left:calc(50% + (var(--sb) / 2)); font-size:14px; padding:13px 22px; }
+  .login-overlay{ padding-left:0; }
+  .login-card{ max-width:430px; padding:36px 32px; }
+}
+@media (min-width:1500px){ :root{ --sb:272px; } main{ padding:4px 56px 80px; } .topbar{ padding-right:56px; } }
+</style>
+
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
