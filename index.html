@@ -1598,6 +1598,24 @@ function urlBase64ToUint8Array(b64){
   return out;
 }
 function pushSupported(){ return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window); }
+// sw.js না থাকলে ready চিরকাল ঝুলে থাকে — তাই সময়সীমা দিয়ে পরিষ্কার বার্তা
+function swReady(){
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise((_, rej) => setTimeout(() => rej(new Error('sw.js পাওয়া যায়নি — smartbiz ফোল্ডারে sw.js আপলোড করুন')), 8000))
+  ]);
+}
+// অনুমতি আগেই দেওয়া থাকলে লগইনের পর নিজে থেকে সাবস্ক্রিপশন নতুন করে সার্ভারে জমা (ফোন/ব্রাউজার বদলালেও ঠিক থাকে)
+async function autoPushSync(){
+  try{
+    if(!pushSupported() || !apiConnected() || !isLoggedIn() || Notification.permission !== 'granted') return;
+    const reg = await swReady();
+    const { publicKey } = await apiFetch('/push/public-key');
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
+    await apiFetch('/push/subscribe', { method:'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
+  }catch(e){}
+}
 
 async function updatePushButton(){
   const btn = document.getElementById('pushBtn');
@@ -1606,7 +1624,7 @@ async function updatePushButton(){
   if(!pushSupported()){ btn.style.display = 'none'; note.textContent = 'এই ব্রাউজারে পুশ নোটিফিকেশন চলে না।'; return; }
   let subscribed = false;
   try{
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await swReady();
     subscribed = !!(await reg.pushManager.getSubscription()) && Notification.permission === 'granted';
   }catch(e){}
   btn.style.display = 'block';
@@ -1622,7 +1640,7 @@ async function enablePush(){
   const perm = await Notification.requestPermission();
   if(perm !== 'granted'){ toast('অনুমতি দেওয়া হয়নি — ফোনের সেটিংস থেকে নোটিফিকেশন চালু করুন'); return; }
   try{
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await swReady();
     const { publicKey } = await apiFetch('/push/public-key');
     let sub = await reg.pushManager.getSubscription();
     if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlBase64ToUint8Array(publicKey) });
@@ -4080,7 +4098,7 @@ try{ const _em = localStorage.getItem('sb_email'); const _el = document.getEleme
 
 </script>
 <script>
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js'); }
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').then(function(){ setTimeout(autoPushSync, 3000); }).catch(function(){}); }
 </script>
 </body>
 </html>
