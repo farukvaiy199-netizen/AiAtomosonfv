@@ -192,6 +192,15 @@
   .call-acts{display:flex; gap:6px; flex-wrap:wrap; margin-top:9px;}
   .call-acts button{font-family:inherit; font-size:11.5px; font-weight:700; border:0; border-radius:20px; padding:7px 12px; cursor:pointer;}
   .ca-g{background:#16a870; color:#fff;} .ca-y{background:#f2b51e; color:#3b2c00;} .ca-r{background:#e5645f; color:#fff;} .ca-n{background:#e7eaee; color:#445;}
+  .pay-box{margin-top:8px; padding:9px 11px; border-radius:12px; border:1px solid #e3ece8; background:#f8fbfa; display:flex; flex-direction:column; gap:5px;}
+  .pay-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--ink-dim);}
+  .pay-chip{display:inline-flex; align-items:center; gap:5px; font-weight:800; font-size:11.5px; padding:3px 10px; border-radius:99px; color:#fff;}
+  .pay-chip.cod{background:#33413b;} .pay-chip.bkash{background:#e2136e;} .pay-chip.nagad{background:#f26a21;} .pay-chip.none{background:#9aa8a2;}
+  .pay-st{font-weight:800; font-size:11.5px; padding:3px 9px; border-radius:99px;}
+  .pay-st.ok{background:#e4f6ec; color:#157a4b;} .pay-st.warn{background:#fff3d9; color:#946200;} .pay-st.bad{background:#fde8e6; color:#b3261e;} .pay-st.due{background:#eef2f0; color:#46554e;}
+  .pay-trx{font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--ink); background:#fff; border:1px dashed #cfdcd6; border-radius:8px; padding:2px 8px;}
+  .pay-sum{font-size:11.5px; color:var(--ink-dim);}
+  .pay-sum b{color:var(--ink);}
   .ord-meta{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px; padding-top:8px; border-top:1px solid #eef3f1;}
   .ord-ship{font-size:11.5px; color:var(--ink-dim);}
   .remind-bar{background:#fff6dd; border:1px solid #f0d58a; color:#7a5600; border-radius:14px; padding:10px 13px; font-size:12.5px; font-weight:600; margin-bottom:10px; line-height:1.6;}
@@ -1855,7 +1864,7 @@ async function openCustomerProfile(id){
         <div class="card row-card" style="margin-bottom:8px;">
           <div class="row-main">
             <div class="t1">${escHtml(o.product)} x${bn(o.qty)}</div>
-            <div class="t2">${escHtml(o.id)} · ৳${bn((o.price||0)*(o.qty||1))} · ${timeAgoBn(o.createdAt)}</div>
+            <div class="t2">${escHtml(o.id)} · ৳${bn(orderTotal(o))} · ${timeAgoBn(o.createdAt)}</div>
           </div>
           ${statusBadge(o.status)}
         </div>`).join('')
@@ -2123,6 +2132,34 @@ function deliveryBadge(o){
   if(o.notReceived) return '<span class="badge cancelled">রিসিভ করেননি</span>';
   return statusBadge(o.status);
 }
+function orderTotal(o){
+  const n = Number(o.total);
+  if (n > 0) return n;
+  return Number(o.price || 0) * Number(o.qty || 1) + (Number(o.shipping) || 0);
+}
+function payBoxHtml(o){
+  const m = String(o.payment || '').toLowerCase();
+  const lbl = m === 'bkash' ? 'বিকাশ' : m === 'nagad' ? 'নগদ' : m === 'cod' ? 'ক্যাশ অন ডেলিভারি' : '';
+  const total = orderTotal(o), paid = Number(o.paidAmount) || 0, ps = String(o.paymentStatus || '');
+  let chip = lbl ? '<span class="pay-chip ' + m + '">' + (m === 'bkash' ? 'bKash' : m === 'nagad' ? 'নগদ' : '💵 COD') + ' · ' + lbl + '</span>' : '<span class="pay-chip none">💳 পেমেন্ট: জানা নেই</span>';
+  let st = '';
+  if (m === 'cod') st = '<span class="pay-st due">ডেলিভারিতে নেবেন ৳' + total.toLocaleString() + '</span>';
+  else if (m === 'bkash' || m === 'nagad') {
+    if (ps === 'paid' || (o.paymentVerified === true && paid + 1 >= total)) st = '<span class="pay-st ok">✅ পরিশোধিত ৳' + (paid || total).toLocaleString() + '</span>';
+    else if (ps === 'partial' || (o.paymentVerified === true && paid > 0)) st = '<span class="pay-st warn">🟡 অগ্রিম ৳' + paid.toLocaleString() + ' · বাকি ৳' + Math.max(total - paid, 0).toLocaleString() + '</span>';
+    else if (o.paymentVerified === false || ps === 'unverified') st = '<span class="pay-st bad">⚠️ TrxID মেলেনি — নিজে যাচাই করুন</span>';
+    else if (o.transactionId) st = '<span class="pay-st warn">⏳ যাচাই বাকি</span>';
+    else st = '<span class="pay-st bad">❌ TrxID নেই</span>';
+  }
+  const trx = o.transactionId ? '<span class="pay-trx">TrxID: ' + escHtml(o.transactionId) + '</span>' : '';
+  const parts = [];
+  if (Number(o.subtotal) > 0 || Number(o.discount) > 0) parts.push('পণ্য <b>৳' + Number(o.subtotal || 0).toLocaleString() + '</b>');
+  if (Number(o.discount) > 0) parts.push('ছাড় <b>−৳' + Number(o.discount).toLocaleString() + '</b>' + (o.couponCode ? ' (' + escHtml(o.couponCode) + ')' : ''));
+  if (Number(o.shipping) > 0) parts.push('ডেলিভারি <b>৳' + Number(o.shipping).toLocaleString() + '</b>');
+  if (o.district) parts.push(escHtml(o.district));
+  const sum = parts.length ? '<div class="pay-sum">' + parts.join(' · ') + '</div>' : '';
+  return '<div class="pay-box"><div class="pay-row">' + chip + st + '</div>' + (trx ? '<div class="pay-row">' + trx + '</div>' : '') + sum + '</div>';
+}
 function orderCardHtml(o){
   const st = callStateOf(o);
   const dig = phoneDigits(o.phone);
@@ -2140,10 +2177,10 @@ function orderCardHtml(o){
     + '<div class="ord-top"><div class="row-avatar">' + initials(o.name) + '</div>'
     + '<div class="row-main"><div class="t1">' + escHtml(o.name) + '</div>'
     + '<span class="ord-src">' + platformLogo(orderSrcKey(o), 16) + orderSrcLabel(o) + '</span></div>'
-    + '<div class="row-end"><div class="amt">৳' + (Number(o.price || 0) * Number(o.qty || 1)).toLocaleString() + '</div>' + deliveryBadge(o) + '</div></div>'
+    + '<div class="row-end"><div class="amt">৳' + orderTotal(o).toLocaleString() + '</div>' + deliveryBadge(o) + '</div></div>'
     + '<div class="t2" style="margin-top:8px;">' + escHtml(o.product) + ' · x' + (o.qty || 1) + ' · ' + escHtml(o.id) + '</div>'
     + (o.address ? '<div class="t2" style="margin-top:2px;">📍 ' + escHtml(o.address) + '</div>' : '')
-    + phone
+    + phone + payBoxHtml(o)
     + '<div>' + callChipHtml(o) + '</div>' + note + acts
     + '<div class="ord-meta">' + shipLine
     + '<select class="status-select" style="margin-top:0;" onchange="updateStatus(\'' + o.id + '\', this.value)">'
